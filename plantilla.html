@@ -1172,11 +1172,17 @@ let GEN=null, genReady=false, pEditing=false;
 const canProj=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&genReady);
 function setProjects(stat){const base=stat.filter(p=>p.area!=="general"&&!(GEN||[]).some(g=>g.id===p.id));const gen=GEN||stat.filter(p=>p.area==="general");S.projects=gen.concat(base)}
 const toGen=r=>Object.assign({},r.data,{id:r.id,area:(r.data&&r.data.area)||"general",_db:1});
-async function fetchGen(){const r=await AUTH.from("gen_projects").select("id,data,updated_at").order("created_at",{ascending:true});if(r.error)throw r.error;return r.data.map(toGen)}
+let genMeta=null;
+async function fetchGen(){const r=await AUTH.from("gen_projects").select("id,data,updated_at").order("created_at",{ascending:true});if(r.error)throw r.error;
+  genMeta=r.data.find(x=>x.id==="_meta")||null;return r.data.filter(x=>!x.id.startsWith("_")).map(toGen)}
 async function loadGen(){if(!AUTH||!acct)return;
   try{let g=await fetchGen();genReady=true;
-    if(!g.length){const seed=STATIC.projects.filter(p=>p.area==="general");
+    /* Pasa a la base de datos, una sola vez, los proyectos que estaban fijos en la página */
+    const done=new Set((genMeta&&genMeta.data&&genMeta.data.seeded)||[]);
+    const seed=STATIC.projects.filter(p=>!done.has(p.id)&&!g.some(x=>x.id===p.id));
+    if(seed.length||!genMeta){
       for(const p of seed){const {id,...d}=p;await AUTH.from("gen_projects").insert({id,data:{...d,ms:d.ms.map(m=>[m[0],m[1],m[2]||""]),_act:""}})}
+      await AUTH.from("gen_projects").upsert({id:"_meta",data:{seeded:[...new Set([...done,...STATIC.projects.map(p=>p.id)])],_act:""}});
       g=await fetchGen();}
     GEN=g;setProjects(STATIC.projects);
     AUTH.channel("gen").on("postgres_changes",{event:"*",schema:"public",table:"gen_projects"},async()=>{
@@ -1222,7 +1228,9 @@ function viewGenProject(id){
       ${ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
       ${ed?`<button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
     ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${respSel("",'id="gpMsR"')}<button class="btn sm" type="submit">Agregar</button></form>`:""}
-  </section>`}
+  </section>
+  ${(p.links||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Entregables y links</h2></div><div class="links">${p.links.map(l=>{const u=safeUrl(l[1])||(String(l[1]||"").startsWith("#")?l[1]:"");return u?`<a href="${esc(u)}" ${u.startsWith("#")?"":'target="_blank" rel="noopener"'}>${esc(l[0])} ↗</a>`:`<span>${esc(l[0])}</span>`}).join("")}</div></section>`:""}
+  ${(p.log||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Actualizaciones</h2></div><div class="log">${p.log.map(l=>`<div class="it">${av(user(l[0]),"sm")}<div><div>${esc(l[1])}</div><div class="when">${esc(user(l[0]).name)} · ${ago(l[2])}</div></div></div>`).join("")}</div></section>`:""}`}
 function bindGenProject(id){if(!canProj())return;
   const get=()=>dbProj(id);
   const commit=async(act)=>{const p=get();if(p.ms.length&&p.ms.every(m=>m[1])&&p.status!=="done"){p.status="done"}else if(p.status==="done"&&p.ms.some(m=>!m[1]))p.status="doing";else if(p.status==="todo"&&p.ms.some(m=>m[1]))p.status="doing";

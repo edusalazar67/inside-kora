@@ -171,6 +171,9 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .gp-ms li:last-child{border-bottom:0}
 .gp-ms input[type=checkbox]{accent-color:var(--green);width:18px;height:18px;flex:none}
 .gp-ms .t{flex:1;min-width:0;font-size:14.5px}
+.gp-ms .grip{cursor:grab;color:var(--ink-3);font-size:13px;letter-spacing:-2px;user-select:none;flex:none}
+.gp-ms li.drag{opacity:.4}.gp-ms li.over{box-shadow:inset 0 2px 0 var(--green)}
+.gp-ms .mv{display:flex;flex:none}.gp-ms .mv .iconbtn{width:28px;height:28px;font-size:14px}.gp-ms .mv .iconbtn:disabled{opacity:.25;cursor:default}
 .gp-ms li.done .t{color:var(--ink-3);text-decoration:line-through}
 .gp-ms .who{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);white-space:nowrap}
 .gp-ms select.resp{flex:none;width:170px;padding-top:6px;padding-bottom:6px;font-size:13px}
@@ -1230,11 +1233,12 @@ function viewGenProject(id){
   </form>`:`<div style="height:16px"></div>`}
   <section class="panel">
     <div class="section-title"><h2>Hitos</h2><span class="eyebrow">${perHito?"Responsable por hito":p.owner?"Responsable: "+esc(user(p.owner).name):""}</span></div>
-    <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}">
+    <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}" ${ed?`draggable="true" data-gi="${i}"`:""}>
+      ${ed?`<span class="grip" title="Arrastra para mover" aria-hidden="true">⋮⋮</span>`:""}
       <input type="checkbox" data-gms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"} aria-label="Completado">
       <span class="t">${esc(m[0])}</span>
       ${!perHito?"":ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
-      ${ed?`<button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
+      ${ed?`<span class="mv"><button type="button" class="iconbtn" data-gup="${i}" ${i===0?"disabled":""} title="Subir" aria-label="Subir hito">↑</button><button type="button" class="iconbtn" data-gdn="${i}" ${i===p.ms.length-1?"disabled":""} title="Bajar" aria-label="Bajar hito">↓</button></span><button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
     ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${perHito?respSel("",'id="gpMsR"'):""}<button class="btn sm" type="submit">Agregar</button></form>`:""}
   </section>
   ${(p.links||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Entregables y links</h2></div><div class="links">${p.links.map(l=>{const u=safeUrl(l[1])||(String(l[1]||"").startsWith("#")?l[1]:"");return u?`<a href="${esc(u)}" ${u.startsWith("#")?"":'target="_blank" rel="noopener"'}>${esc(l[0])} ↗</a>`:`<span>${esc(l[0])}</span>`}).join("")}</div></section>`:""}
@@ -1245,6 +1249,17 @@ function bindGenProject(id){if(!canProj())return;
     route();await saveGen(p,act)};
   $("#view").querySelectorAll("[data-gms]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gms];m[1]=c.checked?1:0;commit(c.checked?`completó «${m[0]}» en`:`reabrió «${m[0]}» en`)});
   $("#view").querySelectorAll("[data-gresp]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gresp];m[2]=c.value;commit(c.value?`asignó «${m[0]}» a ${user(c.value).name} en`:`quitó el responsable de «${m[0]}» en`)});
+  const move=(a,b)=>{const p=get();if(b<0||b>=p.ms.length||a===b)return;const [m]=p.ms.splice(a,1);p.ms.splice(b,0,m);route();saveGen(p,"")};
+  $("#view").querySelectorAll("[data-gup]").forEach(b=>b.onclick=()=>move(+b.dataset.gup,+b.dataset.gup-1));
+  $("#view").querySelectorAll("[data-gdn]").forEach(b=>b.onclick=()=>move(+b.dataset.gdn,+b.dataset.gdn+1));
+  let dragI=null;
+  $("#view").querySelectorAll(".gp-ms li[data-gi]").forEach(li=>{
+    li.addEventListener("dragstart",e=>{dragI=+li.dataset.gi;li.classList.add("drag");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",li.dataset.gi)}catch(_){}});
+    li.addEventListener("dragend",()=>{li.classList.remove("drag");$("#view").querySelectorAll(".gp-ms li.over").forEach(x=>x.classList.remove("over"))});
+    li.addEventListener("dragover",e=>{if(dragI===null)return;e.preventDefault();li.classList.add("over")});
+    li.addEventListener("dragleave",()=>li.classList.remove("over"));
+    li.addEventListener("drop",e=>{e.preventDefault();const to=+li.dataset.gi;const from=dragI;dragI=null;move(from,to)});
+  });
   $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el hito «${m[0]}» de`)});
   $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR")?$("#gpMsR").value:""]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
   const f=$("#gpForm");

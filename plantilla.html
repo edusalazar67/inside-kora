@@ -174,6 +174,23 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .gp-ms select.resp{flex:none;width:170px;padding-top:6px;padding-bottom:6px;font-size:13px}
 .gp-add{margin-top:14px}.gp-add select.resp{flex:none;width:170px}
 @media (max-width:560px){.gp-ms li{flex-wrap:wrap}.gp-ms .t{flex-basis:calc(100% - 70px)}.gp-ms select.resp{margin-left:30px;flex:1}.gp-add{flex-wrap:wrap}.addrow.gp-add input{flex:1 1 100%}.addrow.gp-add select.resp{flex:1}}
+.meet-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.meet-grid{grid-template-columns:1fr}}
+.mt-form{margin-bottom:16px}
+.mt-tag{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);text-decoration:none;vertical-align:2px;margin-left:4px}
+.mt-tag:hover{color:var(--ink)}
+.nav a.mt-nav .n{width:auto;min-width:38px;font-size:10.5px;text-transform:uppercase}
+.mt-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.mt-next{display:flex;gap:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}.mt-next:last-child{border-bottom:0;padding-bottom:0}
+.mt-date{flex:none;width:52px;height:56px;border-radius:12px;background:var(--surface-2);display:grid;place-content:center;text-align:center}
+.mt-date b{font-family:var(--f-display);font-size:20px;line-height:1;color:var(--green)}.mt-date span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+.mt-body{flex:1;min-width:0}.mt-t{font-weight:600}
+.mt-topics{margin:8px 0 0;padding-left:18px;font-size:14px;color:var(--ink-2)}
+.mt-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mt-log{border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.mt-log summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.mt-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:12px}
+.mt-notes{white-space:pre-wrap;font-size:14px;margin-top:6px}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -892,6 +909,7 @@ const ICON={
   team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 14a5 5 0 0 1 3 5"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
   proj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
 };
@@ -910,7 +928,11 @@ function renderShell(){
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
     genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
-    (canProj()?`<a href="#p/nuevo" class="addp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Nuevo proyecto</a>`:""));
+    (canProj()?`<a href="#p/nuevo" class="addp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Nuevo proyecto</a>`:""))+
+    (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
+    (meetClosed?"":`<a href="#meetings" class="${h==="meetings"?"on":""}">${ICON.cal}Todas<span class="count num">${upcoming().length||""}</span></a>`+
+    upcoming().slice(0,3).map(m=>`<a href="#meetings" class="mt-nav"><span class="n">${esc(new Date(m.at).toLocaleDateString("es",{day:"numeric",month:"short"}).replace(".",""))}</span><span class="ell">${esc(m.title)}</span></a>`).join("")+
+    (canMeet()?`<a href="#meetings/nuevo" class="addp ${h==="meetings/nuevo"?"on":""}"><span class="n">+</span>Agendar meeting</a>`:"")):"");
   const u=me?user(me):null;
   $("#me").innerHTML=isAdmin()
     ?`<div class="row">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">Editor · puedes cambiar todo</div></div></div><button class="linkbtn" data-act="logout">Salir del modo editor</button>`
@@ -921,13 +943,14 @@ function renderShell(){
     :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>${AUTH?'<button class="linkbtn" data-act="login">Entrar o crear cuenta</button>':""}`;
   $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:acct?av({name:acct.name||acct.email,color:"#5DBE4C"},"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:AUTH?`<span style="font-size:13px;color:var(--ink-2)">Entrar</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
   const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
-  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+tab("proyectos","Proyectos",ICON.proj)+tab("team","Team",ICON.team)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
+  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+tab("proyectos","Proyectos",ICON.proj)+tab("team","Team",ICON.team)+(AUTH&&acct?tab("meetings","Meetings",ICON.cal):"")+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
   let b=$("#demoBanner");
   if(false&&!b){b=document.createElement("div");b.id="demoBanner";b.className="demo-banner";b.innerHTML="<b>Modo demo.</b> Los cambios se guardan solo en este navegador. Para el link real, conecta la base de datos (ver la guía).";$("#view").before(b)}
 }
 document.addEventListener("click",e=>{
   const a=e.target.closest("[data-act]");if(!a)return;
   const act=a.dataset.act;
+  if(act==="mgtoggle"){meetClosed=!meetClosed;try{localStorage.setItem("ik-mclosed",meetClosed?"1":"")}catch(_){}renderShell();return}
   if(act==="pgtoggle"){projClosed=!projClosed;try{localStorage.setItem("ik-pclosed",projClosed?"1":"")}catch(_){}renderShell();return}
   if(act==="logout")signOut();
   if(act==="mbtn"){acct?signOut():openLogin()}
@@ -967,7 +990,7 @@ function feedHTML(){
   const lv=LIVEFEED.map(a=>({ptitle:a.ptitle,u:S.users.find(x=>(x.name||"").toLowerCase()===(a.who||"").toLowerCase())||{name:a.who||"Alguien",color:"#5DBE4C"},text:a.text,pid:a.pid,at:a.at}));
   const all=st.concat(lv).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,8);
   return all.map(f=>{const p=f.pid?S.projects.find(x=>x.id===f.pid):null;
-    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?(p.area==="general"?`<a href="#p/${esc(p.id)}">${esc(p.title)}</a>`:`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`):f.ptitle?esc(f.ptitle):""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
+    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?(p.area==="general"?`<a href="#p/${esc(p.id)}">${esc(p.title)}</a>`:`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`):f.pid&&AREAS[f.pid]?`<a href="#${f.pid}">${esc(AREAS[f.pid].short)}</a>`:f.ptitle?esc(f.ptitle):""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
 function refreshFeed(){const n=document.getElementById("feedList");if(n)n.innerHTML=feedHTML()}
 setInterval(refreshFeed,30000);
 let actStarted=false;
@@ -1064,6 +1087,80 @@ function countdownPanel(){const c=cdParts();const g=genProjects().find(p=>/lanza
     <div class="cd-nums" id="cdNums">${cdHTML(c)}</div></a>`}
 function cdHTML(c){return [["d","días"],["h","horas"],["m","min"],["s","seg"]].map(([k,l])=>`<div class="cd-box"><b class="num">${String(c[k]).padStart(2,"0")}</b><span>${l}</span></div>`).join("")}
 setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHTML(cdParts())},1000);
+/* ---------- Meetings por área y por proyecto (Supabase: meetings) ---------- */
+let MEET=[], meetReady=false, mtEditing=false;
+let meetClosed=false;try{meetClosed=!!localStorage.getItem("ik-mclosed")}catch(_){}
+const upcoming=()=>MEET.filter(m=>new Date(m.at)>=Date.now()-60*6e4).sort((a,b)=>new Date(a.at)-new Date(b.at));
+const scopeOpts=()=>[["general","General · toda la empresa"],...AREA_KEYS.map(k=>[k,"Área · "+AREAS[k].short]),...genProjects().map(p=>[p.id,"Proyecto · "+p.title])];
+const scopeTag=sc=>{if(!sc||sc==="general")return"";const n=scopeName(sc);if(!n)return"";const href=AREAS[sc]?"#"+sc:"#p/"+sc;return `<a class="mt-tag" href="${href}">${esc(n)}</a>`};
+const canMeet=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&meetReady);
+const scopeName=sc=>sc==="general"?"General":AREAS[sc]?AREAS[sc].short:((genProjects().find(p=>p.id===sc)||{}).title||"");
+async function fetchMeet(){const r=await AUTH.from("meetings").select("id,scope,data").order("created_at",{ascending:true});if(r.error)throw r.error;return r.data.map(x=>Object.assign({},x.data,{id:x.id,scope:x.scope}))}
+async function loadMeetings(){if(!AUTH||!acct)return;
+  try{MEET=await fetchMeet();meetReady=true;
+    AUTH.channel("meet").on("postgres_changes",{event:"*",schema:"public",table:"meetings"},async()=>{try{MEET=await fetchMeet();const h=location.hash.slice(1);if(h==="finanzas"||mtEditing||pEditing){renderShell();return}route()}catch(e){}}).subscribe();
+  }catch(e){console.warn("meetings",e);meetReady=false}}
+async function saveMeet(m,act){const {id,scope,...d}=m;d._act=act||"";d._by=acct?(acct.name||acct.email):"";d._where=scope==="general"?"":scopeName(scope);if(scope==="general")d._act=d._act.replace(/ (en|de)$/,"");
+  const r=await AUTH.from("meetings").upsert({id,scope,data:d});
+  if(r.error){toast("No se pudo guardar: "+(r.error.message||""));return false}return true}
+const fmtMeet=iso=>{const d=new Date(iso);return d.toLocaleDateString("es",{weekday:"short",day:"numeric",month:"short"})+" · "+d.toLocaleTimeString("es",{hour:"numeric",minute:"2-digit"})};
+const gcalDate=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+function gcalUrl(m){const a=new Date(m.at),b=new Date(a.getTime()+(m.mins||60)*6e4);
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("KORA · "+m.title)+"&dates="+gcalDate(a)+"/"+gcalDate(b)+"&details="+encodeURIComponent((m.link?"Google Meet: "+m.link+"\n\n":"")+(m.topics?"Temas: "+m.topics:""))+(m.link?"&location="+encodeURIComponent(m.link):"")}
+const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
+const toLocalInput=iso=>{if(!iso)return["",""];const d=new Date(iso),p=n=>String(n).padStart(2,"0");return[`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`,`${p(d.getHours())}:${p(d.getMinutes())}`]};
+function meetForm(m){const [dd,tt]=toLocalInput(m&&m.at);return `<form class="panel gp-form mt-form" id="mtF" data-id="${m?esc(m.id):""}">
+  <h3 style="margin:0">${m?"Editar meeting":"Agendar meeting"}</h3>
+  <label class="field">Título<input id="mtT" maxlength="80" required value="${m?esc(m.title):""}" placeholder="Ej. Revisión semanal"></label>
+  <label class="field">De qué es<select id="mtS">${scopeOpts().map(([k,l])=>`<option value="${esc(k)}" ${((m&&m.scope)||"general")===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
+  <div class="gp-row"><label class="field">Fecha<input id="mtD" type="date" required value="${dd}"></label><label class="field">Hora<input id="mtH" type="time" required value="${tt||"10:00"}"></label>
+    <label class="field">Duración<select id="mtM">${[30,45,60,90].map(n=>`<option value="${n}" ${((m&&m.mins)||60)===n?"selected":""}>${n} min</option>`).join("")}</select></label></div>
+  <label class="field">Link de Google Meet<div class="addrow"><input id="mtL" type="url" placeholder="https://meet.google.com/…" value="${m?esc(m.link||""):""}"><a class="btn ghost sm" href="https://meet.new" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">Crear link de Meet ↗</a></div></label>
+  <p class="hint" style="margin:-6px 0 0">«Crear link de Meet» abre una reunión nueva en Google Meet. Copia el link de la barra del navegador y pégalo aquí.</p>
+  <label class="field">Temas a tocar<textarea id="mtTo" maxlength="600" placeholder="Un tema por línea">${m?esc(m.topics||""):""}</textarea></label>
+  <label class="field">Notas y acuerdos (después de la reunión)<textarea id="mtN" maxlength="2000" placeholder="Qué se habló, qué se decidió, quién hace qué">${m?esc(m.notes||""):""}</textarea></label>
+  <div class="gp-row" style="justify-content:space-between">${m?'<button type="button" class="btn ghost sm danger" id="mtDel">Borrar meeting</button>':"<span></span>"}
+    <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="mtX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div></form>`}
+const lines=t=>(t||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+function meetingsSection(){
+  if(!AUTH||!acct)return `<div class="empty">Entra con tu cuenta para ver las meetings.</div>`;
+  if(!meetReady)return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Meetings</h1></div></div><div class="empty">Las meetings se activan cuando Eduardo corre el SQL de meetings.</div>`;
+  const ed=canMeet(),now=Date.now()-60*6e4,ms=MEET;
+  const next=ms.filter(m=>new Date(m.at)>=now).sort((a,b)=>new Date(a.at)-new Date(b.at));
+  const past=ms.filter(m=>new Date(m.at)<now).sort((a,b)=>new Date(b.at)-new Date(a.at));
+  return `<section class="meet">
+  <div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Meetings</h1><p>Próximas reuniones y la bitácora de lo que se habló.</p></div>
+    ${ed?'<button class="btn sm" id="mtNew">+ Agendar meeting</button>':""}</div>
+  <div id="mtSlot"></div>
+  <div class="meet-grid">
+    <div class="panel"><div class="section-title"><h2>Próximas</h2><span class="eyebrow">${next.length}</span></div>
+      ${next.length?`<ul class="mt-list">${next.map(m=>`<li class="mt-next"><div class="mt-date"><b>${esc(new Date(m.at).toLocaleDateString("es",{day:"numeric"}))}</b><span>${esc(new Date(m.at).toLocaleDateString("es",{month:"short"}))}</span></div>
+        <div class="mt-body"><div class="mt-t">${esc(m.title)} ${scopeTag(m.scope)}</div><div class="hint">${esc(fmtMeet(m.at))} · ${m.mins||60} min</div>
+        ${lines(m.topics).length?`<ul class="mt-topics">${lines(m.topics).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+        <div class="mt-acts">${safeUrl(m.link)?`<a class="btn sm" href="${esc(safeUrl(m.link))}" target="_blank" rel="noopener" style="text-decoration:none">Unirse a Meet ↗</a>`:'<span class="hint">Sin link de Meet</span>'}
+          <a class="btn ghost sm" href="${esc(gcalUrl(m))}" target="_blank" rel="noopener" style="text-decoration:none">Agregar a Calendar ↗</a>
+          ${ed?`<button class="btn ghost sm" data-mted="${esc(m.id)}">${ICON.edit}Editar</button>`:""}</div></div></li>`).join("")}</ul>`:'<div class="empty">No hay reuniones agendadas.</div>'}</div>
+    <div class="panel"><div class="section-title"><h2>Bitácora</h2><span class="eyebrow">${past.length} pasada${past.length===1?"":"s"}</span></div>
+      ${past.length?`<ul class="mt-list">${past.map(m=>`<li><details class="mt-log"><summary><span class="mt-t">${esc(m.title)} ${scopeTag(m.scope)}</span><span class="hint">${esc(fmtMeet(m.at))}</span></summary>
+        ${lines(m.topics).length?`<div class="mt-h">Temas</div><ul class="mt-topics">${lines(m.topics).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+        <div class="mt-h">Notas y acuerdos</div>${m.notes?`<div class="mt-notes">${esc(m.notes)}</div>`:'<div class="hint">Todavía sin notas.</div>'}
+        ${ed?`<div class="mt-acts"><button class="btn ghost sm" data-mted="${esc(m.id)}">${ICON.edit}${m.notes?"Editar":"Agregar notas"}</button></div>`:""}</details></li>`).join("")}</ul>`:'<div class="empty">Aquí quedan las reuniones pasadas con sus notas.</div>'}</div>
+  </div></section>`}
+function bindMeetings(openNew){if(!canMeet())return;
+  const open=m=>{mtEditing=true;$("#mtSlot").innerHTML=meetForm(m);$("#mtT").focus();$("#mtF").scrollIntoView({block:"nearest",behavior:"smooth"});
+    $("#mtX").onclick=()=>{mtEditing=false;$("#mtSlot").innerHTML="";if(location.hash==="#meetings/nuevo")history.replaceState(null,"","#meetings")};
+    if(m)$("#mtDel").onclick=async()=>{const b=$("#mtDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
+      const r=await AUTH.from("meetings").delete().eq("id",m.id);if(r.error){toast("No se pudo borrar");return}MEET=MEET.filter(x=>x.id!==m.id);mtEditing=false;toast("Meeting borrada");route()};
+    $("#mtF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
+      const at=new Date($("#mtD").value+"T"+$("#mtH").value).toISOString();
+      const sc=$("#mtS").value||"general";const x={id:m?m.id:"m"+Date.now().toString(36),scope:sc,title:$("#mtT").value.trim(),at,mins:+$("#mtM").value,link:$("#mtL").value.trim(),topics:$("#mtTo").value.trim(),notes:$("#mtN").value.trim()};
+      const past=new Date(at)<Date.now();
+      const act=!m?(past?`anotó la reunión «${x.title}» en`:`agendó la reunión «${x.title}» (${fmtMeet(at)}) en`):(x.notes&&!m.notes?`agregó las notas de «${x.title}» en`:`actualizó la reunión «${x.title}» en`);
+      if(await saveMeet(x,act)){MEET=MEET.filter(y=>y.id!==x.id).concat([x]);mtEditing=false;toast("Meeting guardada");if(location.hash==="#meetings/nuevo")history.replaceState(null,"","#meetings");route()}else b.disabled=false}};
+  const nb=$("#mtNew");if(nb)nb.onclick=()=>open(null);
+  if(openNew)open(null);
+  $("#view").querySelectorAll("[data-mted]").forEach(b=>b.onclick=e=>{e.preventDefault();open(MEET.find(m=>m.id===b.dataset.mted))});
+}
 /* ---------- Proyectos generales (Supabase: gen_projects; todos los aprobados editan) ---------- */
 let projClosed=false;try{projClosed=!!localStorage.getItem("ik-pclosed")}catch(_){}
 let GEN=null, genReady=false, pEditing=false;
@@ -1269,6 +1366,7 @@ function route(){
   if(h==="cuentas"&&acctAdmin()){$("#fin").hidden=true;v.innerHTML=viewAccounts();return}
   $("#fin").hidden=true;
   if(AREAS[h])v.innerHTML=viewArea(h);
+  else if(h=="meetings"||h==="meetings/nuevo"){v.innerHTML=meetingsSection();bindMeetings(h==="meetings/nuevo")}
   else if(h==="proyectos")v.innerHTML=viewProjects();
   else if(h==="p/nuevo"&&canProj()){v.innerHTML=viewNewProject();bindNewProject()}
   else if(h.startsWith("p/")&&genProjects().some(p=>p.id===h.slice(2))){v.innerHTML=viewGenProject(h.slice(2));bindGenProject(h.slice(2))}
@@ -1411,7 +1509,7 @@ async function boot(){
   if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
-  await Promise.all([loadGen(),loadTeam()]);
+  await Promise.all([loadGen(),loadTeam(),loadMeetings()]);
   route();live();startActivity();
   let later=false;try{later=!!sessionStorage.getItem("ik-claim-later")}catch(_){}
   if(AUTH&&acct&&!acct.member&&TEAM!==null&&!later)setTimeout(openClaim,400);

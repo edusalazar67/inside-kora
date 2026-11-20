@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="es">
+<title>Inside KORA</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<style>
+/* Layout: dark-green rail on the left (bottom bar on phones), cream work surface, olive area cards echo the KORA areas slide */
+:root{
+  --bg:#F2F0E6; --surface:#FFFFFF; --surface-2:#E9E7DB; --line:#DAD8CB;
+  --ink:#18221C; --ink-2:#56605A; --ink-3:#848C86;
+  --rail:#15201A; --rail-ink:#E8EFE9; --rail-ink-2:#93A39A;
+  --olive:#474F43; --olive-ink:#F3F5EF; --olive-ink-2:#C9D0C3;
+  --green:#5DBE4C; --green-ink:#123012; --green-soft:#DDF1D6; --green-text:#2F7D23;
+  --gold:#F3CF4B; --gold-ink:#3A2F00;
+  --amber-soft:#FBEFC8; --amber-text:#8A6400;
+  --blue-soft:#DCE8F5; --blue-text:#285A8C;
+  --red-soft:#F7DCD7; --red-text:#A13A2B;
+  --grey-soft:#E6E6DE; --grey-text:#5E655F;
+  --shadow:0 1px 2px rgba(20,32,26,.06),0 6px 24px rgba(20,32,26,.06);
+  --f-display:"Lexend",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"DM Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1612; --surface:#18221C; --surface-2:#1F2B24; --line:#2A372F;
+  --ink:#E9EFEA; --ink-2:#AAB6AE; --ink-3:#7C8981;
+  --rail:#0A100C; --rail-ink:#E8EFE9; --rail-ink-2:#8A9A91;
+  --olive:#2E352B; --olive-ink:#F3F5EF; --olive-ink-2:#B9C2B3;
+  --green:#6BD159; --green-ink:#0C220B; --green-soft:#1E3A1B; --green-text:#8FE07E;
+  --gold:#F3CF4B; --gold-ink:#3A2F00;
+  --amber-soft:#3A3014; --amber-text:#F0CC63;
+  --blue-soft:#1A2B3D; --blue-text:#8EBCEB;
+  --red-soft:#3D1F1A; --red-text:#F09B8C;
+  --grey-soft:#262E29; --grey-text:#A9B1AB;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1612; --surface:#18221C; --surface-2:#1F2B24; --line:#2A372F;
+  --ink:#E9EFEA; --ink-2:#AAB6AE; --ink-3:#7C8981;
+  --rail:#0A100C; --rail-ink:#E8EFE9; --rail-ink-2:#8A9A91;
+  --olive:#2E352B; --olive-ink:#F3F5EF; --olive-ink-2:#B9C2B3;
+  --green:#6BD159; --green-ink:#0C220B; --green-soft:#1E3A1B; --green-text:#8FE07E;
+  --gold:#F3CF4B; --gold-ink:#3A2F00;
+  --amber-soft:#3A3014; --amber-text:#F0CC63;
+  --blue-soft:#1A2B3D; --blue-text:#8EBCEB;
+  --red-soft:#3D1F1A; --red-text:#F09B8C;
+  --grey-soft:#262E29; --grey-text:#A9B1AB;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- Login ---------- */
+#login{min-height:100%;background:var(--rail);color:var(--rail-ink);display:flex;align-items:center;justify-content:center;
+  padding-block:48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background-image:radial-gradient(80% 50% at 50% 110%,rgba(93,190,76,.22),transparent 70%)}
+.login-box{width:100%;max-width:720px;display:grid;gap:28px}
+.wordmark{font-family:var(--f-display);font-weight:500;letter-spacing:.42em;font-size:15px}
+.login-head h1{font-size:clamp(30px,5vw,44px);margin-top:18px}
+.login-head p{color:var(--rail-ink-2);max-width:46ch;margin:10px 0 0}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.user-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:16px;text-align:left;
+  display:grid;gap:10px;transition:border-color .15s,background .15s;color:var(--rail-ink)}
+.user-card:hover{border-color:var(--green);background:rgba(93,190,76,.08)}
+.user-card .who{font-family:var(--f-display);font-weight:500}
+.user-card .role{font-size:12.5px;color:var(--rail-ink-2);line-height:1.35}
+.user-card.new{border-style:dashed;place-content:center;justify-items:start}
+.new-user{display:grid;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:18px}
+.new-user .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.new-user label{display:grid;gap:6px;font-size:12.5px;color:var(--rail-ink-2)}
+.new-user input,.new-user select{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;color:var(--rail-ink)}
+.new-user select option{color:#111}
+.login-foot{font-size:12.5px;color:var(--rail-ink-2)}
+
+/* ---------- Avatars / chips ---------- */
+.av{--c:var(--green);width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center;flex:none;
+  background:var(--c);color:#0D1A10;font-family:var(--f-display);font-weight:600;font-size:13px}
+.av.sm{width:26px;height:26px;font-size:11px}
+.av.lg{width:44px;height:44px;font-size:16px}
+.stack{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st-todo{background:var(--grey-soft);color:var(--grey-text)}
+.st-doing{background:var(--blue-soft);color:var(--blue-text)}
+.st-review{background:var(--amber-soft);color:var(--amber-text)}
+.st-done{background:var(--green-soft);color:var(--green-text)}
+.st-blocked{background:var(--red-soft);color:var(--red-text)}
+.tag-ej{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:6px;border:1px dashed var(--ink-3);color:var(--ink-3)}
+
+/* ---------- Shell ---------- */
+#app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
+.rail{background:var(--rail);color:var(--rail-ink);padding:24px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.rail .brand{padding:0 10px}
+.rail .brand small{display:block;color:var(--rail-ink-2);font-size:11.5px;letter-spacing:.06em;margin-top:6px}
+.nav{display:grid;gap:2px}
+.nav .label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rail-ink-2);padding:14px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--rail-ink-2);text-decoration:none;font-weight:500}
+.nav a:hover{color:var(--rail-ink);background:rgba(255,255,255,.05)}
+.nav a.on{color:var(--rail-ink);background:rgba(93,190,76,.16)}
+.nav a .n{font-family:var(--f-display);font-size:11px;color:var(--green);width:18px}
+.nav a svg{width:18px;height:18px}
+.nav a .count{margin-left:auto;font-size:11.5px;color:var(--rail-ink-2)}
+.rail .me{margin-top:auto;display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.08);padding:16px 10px 0}
+.rail .me .row{display:flex;gap:10px;align-items:center}
+.rail .me .nm{font-weight:600;font-size:14px}
+.rail .me .rl{font-size:12px;color:var(--rail-ink-2);line-height:1.3}
+.linkbtn{background:none;border:0;padding:0;color:var(--rail-ink-2);font-size:12.5px;text-align:left;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--rail-ink)}
+
+main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:28px}
+#view{display:grid;gap:24px;min-width:0}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.page-head h1{font-size:clamp(24px,3vw,32px)}
+.page-head p{margin:6px 0 0;color:var(--ink-2);max-width:60ch}
+
+.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:10px 18px;font-weight:600;font-size:14px;background:var(--green);color:var(--green-ink)}
+.btn:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:var(--red-soft);color:var(--red-text)}
+.btn.sm{padding:7px 13px;font-size:13px}
+
+/* ---------- Pulso ---------- */
+.pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.overall>div:last-child{flex:1 1 260px}
+.ring{--p:0;--size:132px;width:var(--size);height:var(--size);border-radius:50%;flex:none;display:grid;place-items:center;
+  background:conic-gradient(var(--green) calc(var(--p)*1%),var(--surface-2) 0)}
+.ring>div{width:calc(var(--size) - 22px);height:calc(var(--size) - 22px);border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center}
+.ring b{font-family:var(--f-display);font-size:32px;font-weight:600;line-height:1}
+.ring span{font-size:11px;color:var(--ink-3);letter-spacing:.06em}
+.overall h2{font-size:20px}
+.overall p{margin:6px 0 14px;color:var(--ink-2);font-size:14px}
+.kpis{display:flex;flex-wrap:wrap;gap:12px 26px}
+@media (max-width:1180px){.pulse{grid-template-columns:1fr}}
+.kpi b{display:block;font-family:var(--f-display);font-size:22px;font-weight:600}
+.kpi span{display:block;font-size:12px;color:var(--ink-3);line-height:1.3}
+.bars{display:grid;gap:14px}
+.bar-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.bar-row .t{font-weight:500;font-size:14px;min-width:0}
+.bar-row .v{font-family:var(--f-display);font-weight:600;font-size:14px}
+.track{grid-column:1/-1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.track i{display:block;height:100%;background:var(--green);border-radius:99px;transition:width .5s ease}
+.track.gold i{background:var(--gold)}
+
+.areas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.area-card{background:var(--olive);color:var(--olive-ink);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px;text-decoration:none;
+  border:1px solid transparent;transition:transform .18s,border-color .18s;min-height:300px}
+.area-card:hover{transform:translateY(-2px);border-color:var(--green)}
+.area-card .n{font-family:var(--f-display);font-weight:600;color:var(--green);font-size:15px}
+.area-card h3{font-size:21px;line-height:1.2}
+.area-card p{margin:0;color:var(--olive-ink-2);font-size:14px}
+.area-card .foot{margin-top:auto;display:grid;gap:12px}
+.area-card .meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--olive-ink-2)}
+.area-card .pct{font-family:var(--f-display);font-size:26px;font-weight:600;color:var(--olive-ink)}
+.area-card .track{background:rgba(255,255,255,.12)}
+.pill{justify-self:start;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.06em;padding:6px 22px;border-radius:999px;background:var(--green);color:var(--green-ink)}
+.pill.gold{background:var(--gold);color:var(--gold-ink)}
+
+.feed{display:grid;gap:0}
+.feed li{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.feed li:last-child{border-bottom:0}
+.feed ul{margin:0;padding:0}
+.feed .txt{font-size:14px}
+.feed .txt b{font-weight:600}
+.feed .txt a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;cursor:pointer}
+.feed .when{font-size:12px;color:var(--ink-3)}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.section-title h2{font-size:17px}
+
+/* ---------- Area view ---------- */
+.area-hero{background:var(--olive);color:var(--olive-ink);border-radius:18px;padding:26px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center}
+.area-hero .n{font-family:var(--f-display);color:var(--green);font-weight:600}
+.area-hero h1{font-size:clamp(24px,3.4vw,34px);margin:4px 0 8px}
+.area-hero p{margin:0;color:var(--olive-ink-2);max-width:52ch}
+.area-hero .ring>div{background:var(--olive)}
+.area-hero .ring{background:conic-gradient(var(--green) calc(var(--p)*1%),rgba(255,255,255,.12) 0)}
+.area-hero .ring span{color:var(--olive-ink-2)}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13px;font-weight:500;color:var(--ink-2)}
+.filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.member{display:grid;gap:12px}
+.member-head{display:flex;align-items:center;gap:12px}
+.member-head .nm{font-family:var(--f-display);font-weight:600}
+.member-head .rl{font-size:13px;color:var(--ink-3)}
+.member-head .sum{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;text-align:left;transition:border-color .15s,box-shadow .15s;min-width:0}
+.proj:hover{border-color:var(--green);box-shadow:var(--shadow)}
+.proj .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.proj h4{font-size:15.5px;line-height:1.3}
+.proj p{margin:0;font-size:13.5px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.proj .bottom{margin-top:auto;display:grid;gap:8px}
+.proj .info{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3);gap:8px}
+.proj .info b{color:var(--ink);font-family:var(--f-display);font-weight:600}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:22px;color:var(--ink-3);font-size:14px;text-align:center}
+.members{display:grid;gap:30px}
+
+/* ---------- Drawer & modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(8,14,10,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:50;transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.18);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.on{transform:none}
+.drawer header{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:grid;gap:10px}
+.drawer header .x{justify-self:end;margin:-6px -6px 0 0}
+.drawer .body{overflow:auto;padding:20px 22px 30px;display:grid;gap:24px;align-content:start}
+.drawer h2{font-size:22px}
+.iconbtn{background:none;border:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2)}
+.iconbtn:hover{background:var(--surface-2)}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px 12px;font-size:14px;align-items:center}
+.kv dt{color:var(--ink-3)}.kv dd{margin:0}
+.ms{display:grid;gap:4px}
+.ms label{display:flex;gap:10px;align-items:flex-start;padding:7px 8px;border-radius:8px;font-size:14px}
+.ms label:hover{background:var(--surface-2)}
+.ms input{accent-color:var(--green);width:17px;height:17px;margin-top:2px;flex:none}
+.ms .done span{color:var(--ink-3);text-decoration:line-through}
+.addrow{display:flex;gap:8px}
+.addrow input,.field input,.field select,.field textarea,select.inline{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px}
+.links a{display:flex;gap:8px;align-items:center;color:var(--green-text);text-decoration:none;font-weight:500;font-size:14px;padding:4px 0;overflow-wrap:anywhere}
+.links a:hover{text-decoration:underline}
+.log{display:grid;gap:12px}
+.log .it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:14px}
+.log .when{font-size:12px;color:var(--ink-3)}
+.drawer footer{border-top:1px solid var(--line);padding:14px 22px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;pointer-events:none;opacity:0;transition:opacity .2s}
+.modal.on{opacity:1;pointer-events:auto}
+.modal form{background:var(--surface);border-radius:18px;width:min(560px,100%);max-height:calc(100% - 32px);overflow:auto;padding:24px;display:grid;gap:16px;box-shadow:var(--shadow)}
+.modal h2{font-size:21px}
+.field{display:grid;gap:6px;font-size:13px;color:var(--ink-2)}
+.field textarea{resize:vertical;min-height:70px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal .actions{display:flex;justify-content:flex-end;gap:10px}
+.hint{font-size:12.5px;color:var(--ink-3);margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;z-index:70;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.tabbar{display:none}
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px){
+  .pulse{grid-template-columns:1fr}
+  .areas{grid-template-columns:1fr}
+  .area-card{min-height:0}
+}
+@media (max-width:760px){
+  #app{grid-template-columns:1fr}
+  .rail{display:none}
+  main{padding-block:20px 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .mtop{display:flex!important}
+  .tabbar{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--rail);
+    padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .tabbar a{display:grid;justify-items:center;gap:3px;color:var(--rail-ink-2);text-decoration:none;font-size:10.5px;font-weight:500;padding:4px 0}
+  .tabbar a.on{color:var(--green)}
+  .tabbar svg{width:20px;height:20px}
+  .overall{flex-direction:column;align-items:flex-start}
+  .area-hero{grid-template-columns:1fr}
+  .new-user .row,.grid2{grid-template-columns:1fr}
+  .kv{grid-template-columns:90px minmax(0,1fr)}
+}
+.mtop{display:none;justify-content:space-between;align-items:center;gap:12px}
+.mtop .wordmark{color:var(--ink);font-size:13px}
+.mtop button{background:none;border:0;padding:0;display:flex;align-items:center;gap:8px}
+body{margin:0}
+.lockwrap{display:grid;place-items:center;padding:24px 0}
+.lockbox{width:min(420px,100%);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;display:grid;gap:16px;box-shadow:var(--shadow)}
+.lockbox label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.lockbox input{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:15px}
+.lockic{width:44px;height:44px;border-radius:12px;background:var(--green-soft);color:var(--green-text);display:grid;place-items:center}
+.lockic svg{width:22px;height:22px}
+.lockerr{color:var(--red-text);font-size:13.5px;min-height:1em}
+.nav a .count svg{width:14px;height:14px}
+.finbar .eyebrow svg{width:13px;height:13px;vertical-align:-2px}
+#fin{display:block;min-width:0}
+main .wrap>*{min-width:0}
+.finbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+/* ===== Modelo financiero (con alcance #fin) ===== */
+
+/* Layout: una sola columna que se lee de arriba abajo: respuestas → 3 pasos → gráficas → detalle opcional */#fin{
+  --bg:#f5f1e6; --surface:#fffdf7; --ink:#10261c; --muted:#5b6b61; --line:#ddd6c4;
+  --brand:#0e3b2a; --accent:#2fd47a; --soft:#e6efe6;
+  --good:#1f8f50; --warn:#a86b12; --bad:#b4442f; --in:#1fae63; --out:#b4442f;
+  --f-display:"Lexend",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"DM Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #fin{
+  --bg:#0c1712; --surface:#13221b; --ink:#e7efe9; --muted:#9db0a4; --line:#26392e;
+  --brand:#9fe8bf; --accent:#2fd47a; --soft:#1a3326; --good:#4cc882; --warn:#e0a948; --bad:#e8775f; --in:#2fd47a; --out:#e8775f; color-scheme:dark}
+}
+:root[data-theme="dark"] #fin{
+  --bg:#0c1712; --surface:#13221b; --ink:#e7efe9; --muted:#9db0a4; --line:#26392e;
+  --brand:#9fe8bf; --accent:#2fd47a; --soft:#1a3326; --good:#4cc882; --warn:#e0a948; --bad:#e8775f; --in:#2fd47a; --out:#e8775f; color-scheme:dark}
+#fin *{box-sizing:border-box}
+#fin{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+#fin .wrap{max-width:980px;margin:0 auto;padding-block:24px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+#fin h1,#fin h2,#fin h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em;color:var(--brand)}
+#fin h1{font-size:clamp(26px,4vw,38px)}
+#fin h2{font-size:21px}
+#fin h3{font-size:15px}
+#fin p{margin:0}
+#fin .eyebrow{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+#fin .sub{color:var(--muted);max-width:64ch;margin-top:6px}
+#fin .num{font-variant-numeric:tabular-nums}
+#fin .seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);gap:2px}
+#fin .seg button{border:0;background:transparent;color:var(--ink);font:600 13.5px var(--f-body);padding:7px 14px;border-radius:999px;cursor:pointer}
+#fin .seg button[aria-pressed=true]{background:var(--brand);color:var(--bg)}
+#fin button:focus-visible,#fin input:focus-visible,#fin summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#fin .controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+#fin .controls .lab{font-size:13px;color:var(--muted);margin-right:6px}
+#fin .answers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){#fin .answers{grid-template-columns:minmax(0,1fr)}
+}
+#fin .ans{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;min-width:0}
+#fin .ans.main{background:var(--brand);border-color:var(--brand);color:var(--bg)}
+#fin .ans.main .q,#fin .ans.main .exp{color:color-mix(in srgb,var(--bg) 80%,transparent)}
+#fin .q{font-size:13.5px;color:var(--muted);font-weight:500}
+#fin .big{font:700 32px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+#fin .exp{font-size:13px;color:var(--muted)}
+#fin .story{background:var(--soft);border-radius:14px;padding:16px 18px;font-size:16px;line-height:1.6;max-width:none}
+#fin .story strong{color:var(--brand)}
+#fin .alert{display:flex;gap:10px;align-items:flex-start;border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);background:color-mix(in srgb,var(--warn) 10%,transparent);border-radius:12px;padding:12px 14px;font-size:14px}
+#fin .alert b{color:var(--warn)}
+#fin .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+@media (max-width:860px){#fin .steps{grid-template-columns:minmax(0,1fr)}
+}
+#fin .step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+#fin .step-h{display:flex;gap:10px;align-items:center}
+#fin .dot{width:26px;height:26px;border-radius:50%;background:var(--brand);color:var(--bg);display:grid;place-items:center;font:700 13px var(--f-display);flex:none}
+#fin .field{display:flex;flex-direction:column;gap:4px}
+#fin .frow{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+#fin .flab{font-size:13.5px;font-weight:500;min-width:0}
+#fin .fval{display:flex;align-items:center;gap:3px;flex:none}
+#fin .fval input{width:78px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:600 14px var(--f-body);text-align:right;font-variant-numeric:tabular-nums}
+#fin .unit{font-size:12px;color:var(--muted)}
+#fin input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+#fin .hint{font-size:12px;color:var(--muted);line-height:1.4;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+#fin .src{font-size:10.5px;font-weight:600;padding:0 6px;border-radius:4px;white-space:nowrap}
+#fin .src.kora{background:var(--brand);color:var(--bg)}
+#fin .src.diego{background:color-mix(in srgb,var(--accent) 25%,transparent);color:var(--good)}
+#fin .src.sup{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+#fin .src.def{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+#fin .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0;display:flex;flex-direction:column;gap:10px}
+#fin .chart-box{position:relative;height:280px}
+#fin .client{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:600px){#fin .client{grid-template-columns:minmax(0,1fr)}
+}
+#fin .cl{border-radius:12px;padding:12px 14px;background:var(--soft);display:flex;flex-direction:column;gap:2px}
+#fin .cl .v{font:700 22px var(--f-display);font-variant-numeric:tabular-nums}
+#fin .cl .v.neg{color:var(--bad)}
+#fin details{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+#fin details>summary{cursor:pointer;padding:14px 18px;font:600 15px var(--f-display);color:var(--brand);list-style:none;display:flex;justify-content:space-between;gap:10px}
+#fin details>summary::after{content:"Ver";font:500 12px var(--f-body);color:var(--muted)}
+#fin details[open]>summary::after{content:"Ocultar"}
+#fin .dbody{padding:0 18px 18px;display:flex;flex-direction:column;gap:14px}
+#fin .fine{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px 22px}
+#fin .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;max-height:420px}
+#fin table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+#fin th,#fin td{padding:6px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+#fin th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-weight:600;font-size:11.5px}
+#fin th:first-child,#fin td:first-child{text-align:left}
+#fin tr.be td{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+#fin td.neg{color:var(--bad)}
+#fin td.pos{color:var(--good)}
+#fin .btns{display:flex;gap:8px;flex-wrap:wrap}
+#fin .btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 13px var(--f-body);padding:7px 12px;border-radius:8px;cursor:pointer}
+#fin textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:12px ui-monospace,Menlo,monospace;padding:8px}
+#fin .toast{font-size:12.5px;color:var(--good);min-height:1em}
+#fin ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+#fin .muted{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){#fin *{transition:none!important}
+}
+#fin .wrap{max-width:1120px}
+#fin .strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){#fin .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+#fin .k{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+#fin .k.main{background:var(--brand);border-color:var(--brand);color:var(--bg)}
+#fin .k .l{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+#fin .k.main .l,#fin .k.main .s{color:color-mix(in srgb,var(--bg) 78%,transparent)}
+#fin .k .v{font:700 26px/1.15 var(--f-display);font-variant-numeric:tabular-nums}
+#fin .k.warnk{border-color:color-mix(in srgb,var(--bad) 55%,transparent);background:color-mix(in srgb,var(--bad) 8%,var(--surface))}
+#fin .k.warnk .v{color:var(--bad)}
+#fin .k .s{font-size:12px;color:var(--muted)}
+#fin .bstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){#fin .bstrip{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+#fin .bstrip .k .v{font-size:22px}
+#fin .bgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){#fin .bgrid{grid-template-columns:minmax(0,1fr)}
+}
+#fin table.bal td:first-child{white-space:normal}
+#fin table.bal tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+#fin table.bal tr.grp td{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding-top:10px}
+#fin .bform{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px 22px}
+#fin .bform input{width:120px}
+#fin .bform input[type=month]{width:150px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:600 14px var(--f-body)}
+#fin details.inner{background:transparent}
+#fin .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+#fin .plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:820px){#fin .plans{grid-template-columns:minmax(0,1fr)}
+}
+#fin .plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+#fin .plan.hl{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+#fin .plan-h{display:flex;justify-content:space-between;align-items:baseline}
+#fin .plan-h b{font:700 15px var(--f-display);color:var(--brand)}
+#fin .price{font:700 34px/1 var(--f-display);font-variant-numeric:tabular-nums}
+#fin .price small{font:500 13px var(--f-body);color:var(--muted)}
+#fin .rows{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+#fin .r{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+#fin .r > span:first-child{color:var(--muted);display:flex;gap:6px;align-items:center}
+#fin .r b{font-variant-numeric:tabular-nums}
+#fin .r b.good{color:var(--good)}
+#fin .r b.bad{color:var(--bad)}
+#fin .road{overflow-x:auto;padding-bottom:4px}
+#fin .road-in{min-width:760px;position:relative;padding:64px 0 70px}
+#fin .phases{display:flex;height:40px;border-radius:10px;overflow:hidden}
+#fin .ph{display:flex;align-items:center;justify-content:center;font:600 12.5px var(--f-body);white-space:nowrap;overflow:hidden;min-width:0}
+#fin .ph.p1{background:color-mix(in srgb,var(--warn) 22%,var(--surface));color:var(--warn)}
+#fin .ph.p2{background:color-mix(in srgb,var(--accent) 22%,var(--surface));color:var(--good)}
+#fin .ph.p3{background:var(--brand);color:var(--bg)}
+#fin .ms{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;width:110px;text-align:center}
+#fin .ms .pin{width:2px;height:16px;background:var(--ink);opacity:.5}
+#fin .ms .mv{font:700 13px var(--f-display);color:var(--brand)}
+#fin .ms .mm{font-size:11px;color:var(--muted)}
+#fin .ms.up{top:0}
+#fin .ms.down{bottom:0;flex-direction:column-reverse}
+#fin .ms.key .mv{color:var(--bg);background:var(--brand);padding:1px 8px;border-radius:999px}
+#fin .ms.bad .mv{color:var(--bad)}
+#fin .ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+#fin .phstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:700px){#fin .phstats{grid-template-columns:minmax(0,1fr)}
+}
+#fin .pst{border-radius:12px;padding:12px 14px;background:var(--soft);display:flex;flex-direction:column;gap:6px}
+#fin .pst h3{font-size:14px}
+#fin .pst .g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#fin .pst .g div{display:flex;flex-direction:column}
+#fin .pst .g span{font-size:11px;color:var(--muted)}
+#fin .pst .g b{font:700 16px var(--f-display);font-variant-numeric:tabular-nums}
+#fin .charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:820px){#fin .charts{grid-template-columns:minmax(0,1fr)}
+}
+#fin .charts .wide{grid-column:1/-1}
+#fin .year td,#fin .year th{font-size:13.5px;padding:9px 12px}
+#fin .year td b{font-family:var(--f-display)}
+#fin .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px 24px}
+#fin .sgroup{display:flex;flex-direction:column;gap:12px}
+#fin .sgroup h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+#fin .help{position:relative;display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid currentColor;font:600 9.5px var(--f-body);cursor:help;opacity:.75;background:transparent;color:inherit;padding:0}
+#fin .help .tip{display:none;position:absolute;z-index:30;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:min(240px,70vw);background:var(--ink);color:var(--bg);font:400 12px/1.45 var(--f-body);padding:8px 10px;border-radius:8px;text-align:left}
+#fin .help:hover .tip,#fin .help:focus .tip{display:block}
+#fin .legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+#fin .legend2 span{display:inline-flex;gap:6px;align-items:center}
+#fin .legend2 i{width:9px;height:9px;border-radius:50%;display:inline-block}
+#fin [hidden]{display:none!important}
+#fin .fixedbox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px}
+@media (max-width:760px){#fin .fixedbox{grid-template-columns:minmax(0,1fr)}
+}
+#fin .lh{display:flex;gap:8px;align-items:center}
+#fin .lists{display:flex;flex-direction:column;gap:6px}
+#fin .lrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 92px 28px;gap:6px;align-items:center}
+#fin .lrow.lrow2{grid-template-columns:minmax(0,1fr) 92px 28px}
+#fin .lrow.lhead{font-size:11.5px;color:var(--muted)}
+#fin .lrow input{width:100%;min-width:0;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:13.5px var(--f-body)}
+#fin .lrow input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+#fin .btn.icon{padding:3px 0;width:28px;font-size:15px;line-height:1}
+#fin .ltot{font-size:13px;color:var(--muted)}
+#fin .ltot b,#fin .ftot b{color:var(--brand)}
+#fin .savest{font-size:12.5px;margin-top:6px;color:var(--muted)}
+#fin .savest.ok{color:var(--good)}
+#fin .savest.warn{color:var(--warn)}
+#fin .savest.busy{color:var(--muted)}
+#fin .ask{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--warn)}
+#fin .btn.primary{background:var(--brand);color:var(--bg);border-color:var(--brand)}
+#fin .btn:disabled{opacity:.45;cursor:not-allowed}
+#fin .btn.danger{border-color:var(--bad);color:var(--bad)}
+#fin .ftot{font-size:14.5px;padding:10px 12px;background:var(--soft);border-radius:10px}
+
+
+#fin{background:transparent}
+#fin .wrap{max-width:none;margin:0;padding:0}
+
+
+.demo-banner{background:var(--gold-soft,#FBF0C4);color:#5a4a0c;border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:18px}
+.team-list{display:grid;gap:10px;margin-top:22px}
+.team-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 16px}
+.team-row .tm{flex:1;min-width:0}.team-row .nm{font-weight:600}.team-row .rl{font-size:12.5px;color:var(--ink-3)}
+.team-row .btn svg,.btn svg{width:15px;height:15px}
+.rail .me .av svg{width:16px;height:16px;color:var(--green-ink)}
+@media (max-width:560px){.team-row .hint{display:none}}
+</style>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <aside class="rail">
+    <div class="brand"><small>Inside</small><div class="wordmark">KORA</div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="me" id="me"></div>
+  </aside>
+  <main>
+    <div class="wrap">
+      <div class="mtop">
+        <div class="wordmark"><span style="letter-spacing:.06em;color:var(--ink-3);font-size:12px">Inside</span> KORA</div>
+        <button id="mUser" aria-label="Cambiar usuario"></button>
+      </div>
+      <div id="view"></div>
+<div id="fin" hidden>
+<div class="wrap">
+  <header style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-end">
+    <div>
+      <div class="eyebrow">KORA · El Salvador · Modelo financiero</div>
+      <h1>Ruta a la rentabilidad</h1>
+      <div class="savest busy" id="saveStatus" role="status">● Conectando…</div>
+    </div>
+    <div class="controls">
+      <span class="seg" role="group" aria-label="Escenario" id="scSeg"><button type="button" data-sc="cons">Conservador</button><button type="button" data-sc="base">Base</button><button type="button" data-sc="opt">Optimista</button></span>
+    </div>
+  </header>
+
+  <section class="strip" id="strip" aria-label="Resultados clave"></section>
+
+  <section class="card">
+    <div class="sec-h"><h2>Roadmap</h2><div class="legend2"><span><i style="background:var(--warn)"></i>Lanzamiento</span><span><i style="background:var(--accent)"></i>Tracción</span><span><i style="background:var(--brand)"></i>Rentable</span></div></div>
+    <div class="road"><div class="road-in" id="road"></div></div>
+    <div class="phstats" id="phstats"></div>
+  </section>
+
+  <section class="card">
+    <div class="sec-h"><h2>Precios</h2><span class="muted" style="font-size:13px">Lo que deja cada cliente al mes, con precio normal</span></div>
+    <div class="plans" id="plans"></div>
+  </section>
+
+  <div class="charts">
+    <section class="card wide"><div class="sec-h"><h2>Ingresos vs costos</h2></div><div class="chart-box"><canvas id="chFlow" aria-label="Ingresos y costos por mes"></canvas></div></section>
+    <section class="card"><div class="sec-h"><h2>Clientes que pagan</h2></div><div class="chart-box"><canvas id="chUsers" aria-label="Clientes por plan"></canvas></div></section>
+    <section class="card"><div class="sec-h"><h2>Ganancia o pérdida de cada mes</h2></div><div class="chart-box"><canvas id="chCash" aria-label="Resultado de cada mes"></canvas></div></section>
+  </div>
+
+  <section class="card" id="balCard">
+    <div class="sec-h"><h2>Balance y liquidez</h2><span class="muted" style="font-size:13px" id="balAsOf"></span></div>
+    <div class="alert" id="balAlert" hidden><span>⚠</span><span><b>Falta el balance real.</b> Con todo en $0, el efectivo solo muestra lo que generan las operaciones. Llena «Editar balance de hoy» con lo que KORA tiene y debe.</span></div>
+    <div class="bstrip" id="balStrip"></div>
+    <div class="bgrid">
+      <div class="scroll" style="max-height:none"><table class="year bal" id="balTable"></table></div>
+      <div><div class="sec-h" style="margin-bottom:6px"><h3>Efectivo y patrimonio proyectados</h3></div><div class="chart-box"><canvas id="chBal" aria-label="Efectivo y patrimonio por mes"></canvas></div></div>
+    </div>
+    <details class="inner" id="balEdit">
+      <summary>Editar balance de hoy</summary>
+      <div class="dbody">
+        <div class="legend2"><span class="src def">Por definir</span><span class="muted" style="font-size:13px">Pon los números reales de KORA. Se guardan para todo el equipo.</span></div>
+        <div class="bform" id="bform"></div>
+        <div class="btns"><button type="button" class="btn primary" id="saveBtn2" disabled>Guardar cambios</button></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <div class="sec-h"><h2>Resumen por año</h2><button type="button" class="btn" id="copyCsv">Copiar mes a mes para Excel</button></div>
+    <div class="toast" id="csvToast" role="status"></div>
+    <div class="scroll" style="max-height:none"><table class="year" id="yearTable"></table></div>
+  </section>
+
+  <details id="supBox">
+    <summary>Supuestos (editar)</summary>
+    <div class="dbody">
+      <p class="muted" style="font-size:13px">Cambia lo que necesites y presiona <b>Guardar cambios</b> para que lo vea todo el equipo. El escenario y los meses que miras son solo tuyos.</p>
+      <div class="legend2"><span class="src kora">Dato KORA</span><span class="src sup">Supuesto</span><span class="src def">Por definir</span></div>
+      <div class="fixedbox" id="fixedBox">
+        <div class="sgroup"><div class="lh"><h3>Colaboradores (salarios)</h3><span class="src def">Por definir</span></div>
+          <div id="teamList" class="lists"></div>
+          <div class="frow"><button type="button" class="btn" id="addTeam">+ Agregar colaborador</button><span class="ltot" id="teamTotal"></span></div>
+          <div class="field"><div class="frow"><label class="flab" for="in-payrollLoad">Cargas patronales <span class="src sup">Supuesto</span></label><span class="fval"><input type="number" id="in-payrollLoad" data-id="payrollLoad" min="0" max="40" step="0.25"><span class="unit">%</span></span></div><div class="hint">ISSS 7.5% + AFP 8.75% que paga el empleador.</div></div>
+        </div>
+        <div class="sgroup"><div class="lh"><h3>Otros costos fijos</h3><span class="src sup">Supuesto</span></div>
+          <div id="costList" class="lists"></div>
+          <div class="frow"><button type="button" class="btn" id="addCost">+ Agregar costo</button><span class="ltot" id="costTotal"></span></div>
+        </div>
+      </div>
+      <p class="ftot" id="fixedTotal"></p>
+      <div class="sgrid" id="sgrid"></div>
+      <div class="btns"><button type="button" class="btn primary" id="saveBtn" disabled>Guardar cambios</button><button type="button" class="btn" id="discardBtn" hidden>Descartar mis cambios</button></div>
+    </div>
+  </details>
+</div>
+</div>
+    </div>
+  </main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<div class="modal" id="modal"></div>
+<div class="toast" id="toast"></div>
+
+<script id="kora-data" type="application/json">
+{"updated": "2026-11-20", "finanzasUrl": "https://claude.ai/artifact/7PnwXCN2PKY6egqUHbxnkL#finanzas", "users": [{"id": "victor", "name": "Victor", "role": "Co-founder", "area": "dir", "color": "#F3CF4B"}, {"id": "luma", "name": "Luma", "role": "Co-founder", "area": "dir", "color": "#8FD3C1"}, {"id": "diego", "name": "Diego", "role": "Research & BI", "area": "research", "color": "#A7B8F0"}, {"id": "eduardo", "name": "Eduardo", "role": "Research & BI · Practicante", "area": "research", "color": "#5DBE4C"}], "projects": [{"id": "p3", "owner": "eduardo", "area": "research", "title": "Inside KORA", "status": "doing", "due": "", "example": false, "desc": "Portal interno para que el equipo vea el avance de cada área y de toda la empresa.", "ms": [["Prompt de la iniciativa", 1], ["Mockup interactivo", 1], ["Unir el modelo financiero (Finanzas)", 1], ["Presentar a Victor y Luma", 1], ["Versión real en la web", 1], ["Compartir el link con el equipo", 0]], "links": [], "log": [["eduardo", "Inside KORA ya tiene su link para el equipo.", "2026-11-20T05:00:00Z"], ["eduardo", "Al equipo le gustó. Pasamos a la versión real en la web.", "2026-11-20T04:30:00Z"]]}, {"id": "p1", "owner": "eduardo", "area": "research", "title": "Precios Nicaragua y Costa Rica", "status": "review", "due": "", "example": false, "desc": "Propuesta de precios por país a partir del modelo de El Salvador. NI: Micro $3.99 / Pro $9.99. CR: Micro $8.99 / Pro $19.99. Cada dato lleva su fuente y si está verificado.", "ms": [["Investigar mercado de Nicaragua", 1], ["Investigar mercado de Costa Rica", 1], ["Proponer precios y ofertas", 1], ["Deck con fuentes y notas", 1], ["Guía PDF para presentar", 1], ["Verificar datos marcados como pendientes", 0], ["Validar con los co-founders", 0]], "links": [["Deck de precios NI y CR", "https://claude.ai/artifact/KsCghw1Ui4yTdBCaMUfv3q"]], "log": []}, {"id": "p2", "owner": "eduardo", "area": "research", "title": "Modelo financiero El Salvador", "status": "review", "due": "", "example": false, "desc": "Modelo interactivo de break-even, inversión necesaria, precios por plan, balance y liquidez. Está en la sección Finanzas.", "ms": [["Estructura del modelo", 1], ["Escenarios y tabla de sensibilidad", 1], ["Punto de equilibrio y runway", 1], ["Validar costos fijos reales", 0], ["Validar churn y conversión con datos de la app", 0]], "links": [["Modelo financiero (sección Finanzas)", "#finanzas"]], "log": []}, {"id": "p4", "owner": "diego", "area": "research", "title": "Precios El Salvador", "status": "done", "due": "", "example": false, "desc": "Precios base para El Salvador: Micro $5.55 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).", "ms": [["Market deck de El Salvador", 1], ["Deck de monetización", 1], ["Precios Micro y Pro", 1], ["Oferta del primer mes", 1]], "links": [], "log": []}], "feed": [{"who": "eduardo", "text": "completó «Versión real en la web» en", "pid": "p3", "at": "2026-11-20T05:00:00Z"}, {"who": "eduardo", "text": "completó «Presentar a Victor y Luma» en", "pid": "p3", "at": "2026-11-19T20:00:00Z"}, {"who": "diego", "text": "completó", "pid": "p4", "at": "2026-11-16T18:00:00Z"}]}
+</script>
+<script>
+(function(){
+/* ================= Conexión =================
+   Con config.js lleno (Supabase) los datos son compartidos y reales.
+   Sin config.js funciona en "modo demo": todo se guarda solo en este navegador. */
+const CFG=window.KORA_CONFIG||{};
+const STATIC=JSON.parse(document.getElementById("kora-data").textContent);
+const LIVE=false;
+const sb=LIVE?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey):null;
+
+const AREAS={
+  growth:{n:"01",name:"Growth & Marketing",short:"Growth",desc:"Adquisición, contenido, comunidad y cómo escalar a toda la región."},
+  research:{n:"02",name:"Research & Business Intelligence",short:"Research & BI",desc:"Datos, research y lo que hay detrás de Kora."},
+  bizdev:{n:"03",name:"Business Development",short:"Business Dev",desc:"Alianzas, ventas y la expansión de Kora por Latinoamérica."}
+};
+const AREA_KEYS=["growth","research","bizdev"];
+const AREA_OPTS=[...AREA_KEYS.map(k=>[k,AREAS[k].name]),["dir","Dirección (co-founder)"]];
+const STATUS={todo:"Por iniciar",doing:"En curso",review:"En revisión",done:"Completado",blocked:"Bloqueado"};
+const COLORS=["#5DBE4C","#F3CF4B","#8FD3C1","#E9A27A","#A7B8F0","#D6A6E8","#9BD27B","#F0B95A"];
+const KEY="inside-kora-web-demo";
+
+function seed(){
+  const d=s=>new Date(s).toISOString();
+  return {
+    users:[
+      {id:"victor",name:"Victor",role:"Co-founder",area:"dir",color:"#F3CF4B"},
+      {id:"luma",name:"Luma",role:"Co-founder",area:"dir",color:"#8FD3C1"},
+      {id:"diego",name:"Diego",role:"Research & BI",area:"research",color:"#A7B8F0"},
+      {id:"eduardo",name:"Eduardo",role:"Research & BI · Practicante",area:"research",color:"#5DBE4C"}
+    ],
+    projects:[
+      {id:"p1",owner:"eduardo",area:"research",title:"Precios Nicaragua y Costa Rica",status:"review",due:"",example:false,
+       desc:"Propuesta de precios por país a partir del modelo de El Salvador. NI: Micro $3.99 / Pro $9.99. CR: Micro $8.99 / Pro $19.99. Cada dato lleva su fuente y si está verificado.",
+       ms:[["Investigar mercado de Nicaragua",1],["Investigar mercado de Costa Rica",1],["Proponer precios y ofertas",1],["Deck con fuentes y notas",1],["Guía PDF para presentar",1],["Verificar datos marcados como pendientes",0],["Validar con los co-founders",0]],
+       links:[["Deck de precios NI y CR","https://claude.ai/artifact/KsCghw1Ui4yTdBCaMUfv3q"]],log:[]},
+      {id:"p2",owner:"eduardo",area:"research",title:"Modelo financiero El Salvador",status:"review",due:"",example:false,
+       desc:"Modelo interactivo en la sección Finanzas: break-even, inversión necesaria, precios por plan, balance y liquidez.",
+       ms:[["Estructura del modelo",1],["Escenarios y tabla de sensibilidad",1],["Punto de equilibrio y runway",1],["Validar costos fijos reales",0],["Validar churn y conversión con datos de la app",0]],
+       links:[["Modelo financiero (sección Finanzas)","#finanzas"]],log:[]},
+      {id:"p3",owner:"eduardo",area:"research",title:"Inside KORA",status:"doing",due:"",example:false,
+       desc:"Portal interno para que el equipo vea el avance de cada área y de toda la empresa.",
+       ms:[["Prompt de la iniciativa",1],["Mockup interactivo",1],["Unir el modelo financiero (Finanzas)",1],["Presentar a Victor y Luma",1],["Versión real en la web",0]],
+       links:[],log:[["eduardo","Al equipo le gustó. Pasamos a la versión real en la web.",d("2026-11-20T04:30:00Z")]]},
+      {id:"p4",owner:"diego",area:"research",title:"Precios El Salvador",status:"done",due:"",example:false,
+       desc:"Precios base para El Salvador: Micro $5.55 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).",
+       ms:[["Market deck de El Salvador",1],["Deck de monetización",1],["Precios Micro y Pro",1],["Oferta del primer mes",1]],links:[],log:[]}
+    ],
+    feed:[{who:"eduardo",text:"publicó una actualización en",pid:"p3",at:d("2026-11-20T04:30:00Z")},{who:"diego",text:"completó",pid:"p4",at:d("2026-11-16T18:00:00Z")}]
+  };
+}
+
+/* role: viewer (cualquiera con el link) · fin (contraseña de Finanzas) · admin (el editor) */
+let S={users:[],projects:[],feed:[]}, role="viewer", me=null, filter="all";
+const isAdmin=()=>role==="admin", canFin=()=>role==="admin"||role==="fin";
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const user=id=>S.users.find(u=>u.id===id)||{name:"?",role:"",color:"#999",id};
+const initials=n=>String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
+const av=(u,cls="")=>`<span class="av ${cls}" style="--c:${esc(u.color)};background:${esc(u.color)}" title="${esc(u.name)}">${esc(initials(u.name))}</span>`;
+const pct=p=>{if(p.status==="done")return 100;if(!p.ms.length)return p.status==="todo"?0:p.status==="review"?80:30;return Math.round(p.ms.filter(m=>m[1]).length/p.ms.length*100)};
+const areaPct=a=>{const ps=S.projects.filter(p=>p.area===a);return ps.length?Math.round(ps.reduce((s,p)=>s+pct(p),0)/ps.length):0};
+const overallPct=()=>S.projects.length?Math.round(S.projects.reduce((s,p)=>s+pct(p),0)/S.projects.length):0;
+const chip=s=>`<span class="chip st-${s}">${STATUS[s]||s}</span>`;
+const fmtDate=s=>s?new Date(s+"T12:00:00").toLocaleDateString("es",{day:"numeric",month:"short",year:"numeric"}):"Sin fecha";
+function ago(iso){const m=Math.round((Date.now()-new Date(iso))/60000);if(m<1)return"ahora";if(m<60)return`hace ${m} min`;const h=Math.round(m/60);if(h<24)return`hace ${h} h`;const d=Math.round(h/24);if(d<30)return`hace ${d} d`;return new Date(iso).toLocaleDateString("es",{day:"numeric",month:"short"})}
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("on"),2400)}
+const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+
+/* ---------- datos: leer ---------- */
+const toRow=p=>({id:p.id,owner:p.owner,area:p.area,title:p.title,status:p.status,due:p.due||null,example:!!p.example,descr:p.desc||"",ms:p.ms,links:p.links,log:p.log});
+const fromRow=r=>({id:r.id,owner:r.owner,area:r.area,title:r.title,status:r.status,due:r.due||"",example:!!r.example,desc:r.descr||"",ms:r.ms||[],links:r.links||[],log:r.log||[]});
+async function fetchAll(){
+  if(STATIC){S={users:STATIC.users,projects:STATIC.projects,feed:STATIC.feed};snap();return}
+  const [m,p,f]=await Promise.all([
+    sb.from("members").select("*").order("created_at"),
+    sb.from("projects").select("*").order("created_at",{ascending:false}),
+    sb.from("feed").select("*").order("at",{ascending:false}).limit(60)]);
+  const err=m.error||p.error||f.error;if(err)throw err;
+  S.users=m.data.map(u=>({id:u.id,name:u.name,role:u.role||"",area:u.area,color:u.color||"#5DBE4C"}));
+  S.projects=p.data.map(fromRow);
+  S.feed=f.data.map(x=>({who:x.who,text:x.text,pid:x.pid,at:x.at}));
+  snap();
+}
+
+/* ---------- datos: guardar (solo el editor; la base de datos también lo exige) ---------- */
+let snapP={},snapU={},pendingFeed=[],saving=Promise.resolve();
+function snap(){snapP={};S.projects.forEach(p=>snapP[p.id]=JSON.stringify(p));snapU={};S.users.forEach(u=>snapU[u.id]=JSON.stringify(u));}
+function log(text,pid){const f={who:me,text,pid:pid||null,at:new Date().toISOString()};S.feed.unshift(f);S.feed=S.feed.slice(0,60);pendingFeed.push(f)}
+function save(){
+  if(!LIVE){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}pendingFeed=[];return}
+  saving=saving.then(pushChanges);
+}
+async function pushChanges(){
+  const curP={},upP=[],delP=[],curU={},upU=[],delU=[];
+  S.users.forEach(u=>{const j=JSON.stringify(u);curU[u.id]=j;if(snapU[u.id]!==j)upU.push({id:u.id,name:u.name,role:u.role,area:u.area,color:u.color})});
+  Object.keys(snapU).forEach(id=>{if(!(id in curU))delU.push(id)});
+  S.projects.forEach(p=>{const j=JSON.stringify(p);curP[p.id]=j;if(snapP[p.id]!==j)upP.push(toRow(p))});
+  Object.keys(snapP).forEach(id=>{if(!(id in curP))delP.push(id)});
+  const fd=pendingFeed.splice(0);snapP=curP;snapU=curU;
+  const chk=r=>{if(r.error)throw r.error};
+  try{
+    if(upU.length)chk(await sb.from("members").upsert(upU));
+    if(upP.length)chk(await sb.from("projects").upsert(upP));
+    if(delP.length)chk(await sb.from("projects").delete().in("id",delP));
+    if(delU.length)chk(await sb.from("members").delete().in("id",delU));
+    if(fd.length)chk(await sb.from("feed").insert(fd));
+  }catch(e){console.error(e);toast("No se pudo guardar. Volviendo a cargar…");try{await fetchAll()}catch(_){}route();}
+}
+let reloadT=null;
+function live(){ // cambios en vivo: si el editor actualiza algo, todos lo ven sin recargar
+  if(!LIVE)return;
+  const ch=sb.channel("inside");
+  ["members","projects","feed"].forEach(t=>ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>{
+    clearTimeout(reloadT);reloadT=setTimeout(async()=>{await saving;if(isAdmin()&&$("#modal").classList.contains("on"))return;try{await fetchAll();route();if(openId)renderDrawer()}catch(e){}},700)}));
+  ch.subscribe();
+}
+
+/* ---------- acceso ---------- */
+async function resolveRole(){
+  role="viewer";me=null;
+  if(STATIC)return;
+  const {data:{session}}=await sb.auth.getSession();if(!session)return;
+  const r=await sb.from("staff").select("role,member_id").maybeSingle();
+  if(r.data){role=r.data.role==="admin"?"admin":r.data.role==="finance"?"fin":"viewer";me=r.data.member_id||null}
+}
+async function signIn(email,pw){
+  if(!LIVE){if(!pw)return"Escribe la contraseña.";try{sessionStorage.setItem(KEY+"-role",email===CFG.financeEmail||email==="fin"?"fin":"admin")}catch(e){}location.reload();return null}
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error)return"Contraseña incorrecta.";
+  location.reload();return null;
+}
+async function signOut(){if(LIVE)await sb.auth.signOut();else try{sessionStorage.removeItem(KEY+"-role")}catch(e){}location.hash="pulso";location.reload()}
+
+function openLogin(){
+  $("#modal").innerHTML=`<form id="lgForm" autocomplete="on">
+    <h2>Entrar para editar</h2>
+    <p class="hint">Solo para quien administra Inside KORA. El resto del equipo puede ver todo sin entrar.</p>
+    <label class="field" for="lgE">Correo<input id="lgE" type="email" autocomplete="username" required value="${esc(CFG.editorEmail||"")}"></label>
+    <label class="field" for="lgP">Contraseña<input id="lgP" type="password" autocomplete="current-password" required></label>
+    <div class="lockerr" id="lgErr" role="alert"></div>
+    <div class="actions"><button type="button" class="btn ghost" id="lgCancel">Cancelar</button><button class="btn" type="submit">Entrar</button></div></form>`;
+  $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>($("#lgE").value?$("#lgP"):$("#lgE")).focus(),50);
+  $("#lgCancel").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  $("#lgForm").onsubmit=async e=>{e.preventDefault();const m=await signIn($("#lgE").value.trim(),$("#lgP").value);if(m){$("#lgErr").textContent=m;$("#lgP").value=""}};
+}
+
+const ICON={
+  pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>',
+  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 14a5 5 0 0 1 3 5"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
+};
+
+/* ---------- Shell ---------- */
+function renderShell(){
+  const h=location.hash.slice(1)||"pulso";
+  $("#nav").innerHTML=
+    `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA</a>
+     <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${canFin()?"":ICON.lock}</span></a>
+     ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
+     <div class="label">Áreas</div>`+
+    AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("");
+  const u=me?user(me):null;
+  $("#me").innerHTML=isAdmin()
+    ?`<div class="row">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">Editor · puedes cambiar todo</div></div></div><button class="linkbtn" data-act="logout">Salir del modo editor</button>`
+    :role==="fin"
+    ?`<div class="row"><span class="av" style="background:var(--green)">${ICON.lock}</span><div><div class="nm">Finanzas abierta</div><div class="rl">Solo lectura</div></div></div><button class="linkbtn" data-act="logout">Cerrar finanzas</button>`
+    :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>`;
+  $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
+  const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
+  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
+  let b=$("#demoBanner");
+  if(false&&!b){b=document.createElement("div");b.id="demoBanner";b.className="demo-banner";b.innerHTML="<b>Modo demo.</b> Los cambios se guardan solo en este navegador. Para el link real, conecta la base de datos (ver la guía).";$("#view").before(b)}
+}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]");if(!a)return;
+  const act=a.dataset.act;
+  if(act==="logout")signOut();
+  if(act==="login")openLogin();
+  if(act==="open")openDrawer(a.dataset.id);
+  if(act==="new")openModal(null,a.dataset.area);
+  if(act==="filter"){filter=a.dataset.f;route()}
+  if(act==="person")openPerson(a.dataset.id?S.users.find(u=>u.id===a.dataset.id):null);
+});
+
+
+/* ---------- Vistas ---------- */
+function projCard(p,showOwner){
+  const u=user(p.owner),v=pct(p);
+  return `<button class="proj" data-act="open" data-id="${esc(p.id)}">
+    <div class="top"><h4>${esc(p.title)}</h4>${chip(p.status)}</div>
+    <p>${esc(p.desc)}</p>
+    <div class="bottom">
+      <div class="info"><span>${showOwner?esc(u.name)+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</span><b class="num">${v}%</b></div>
+      <div class="track"><i style="width:${v}%"></i></div>
+    </div></button>`;
+}
+function viewPulso(){
+  const all=S.projects, active=all.filter(p=>p.status!=="done").length, done=all.filter(p=>p.status==="done").length;
+  const people=S.users.length, ov=overallPct();
+  const best=AREA_KEYS.slice().sort((a,b)=>areaPct(b)-areaPct(a))[0];
+  return `
+  <div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Pulso de KORA</h1>
+    <p>Cómo va la empresa hoy, según los proyectos de cada área.</p></div>
+    ${isAdmin()?'<button class="btn" data-act="new">+ Nuevo proyecto</button>':""}</div>
+  <div class="pulse">
+    <div class="panel overall">
+      <div class="ring" style="--p:${ov}"><div><div><b class="num">${ov}%</b><br><span>AVANCE</span></div></div></div>
+      <div style="min-width:0;flex:1">
+        <h2>Avance general</h2>
+        <p>Promedio de todos los proyectos.${all.length?` ${AREAS[best].short} va adelante con ${areaPct(best)}%.`:""}</p>
+        <div class="kpis">
+          <div class="kpi"><b class="num">${active}</b><span>en marcha</span></div>
+          <div class="kpi"><b class="num">${done}</b><span>completados</span></div>
+          <div class="kpi"><b class="num">${people}</b><span>personas</span></div>
+          <div class="kpi"><b class="num">10</b><span>países</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-title"><h2>Por área</h2><span class="eyebrow">% de avance</span></div>
+      <div class="bars">${AREA_KEYS.map(k=>`<div class="bar-row"><span class="t">${AREAS[k].n} · ${AREAS[k].name}</span><span class="v num">${areaPct(k)}%</span><div class="track ${k==="research"?"gold":""}"><i style="width:${areaPct(k)}%"></i></div></div>`).join("")}</div>
+    </div>
+  </div>
+  <div class="areas">${AREA_KEYS.map(k=>{
+    const ps=S.projects.filter(p=>p.area===k);const owners=[...new Set(ps.map(p=>p.owner).concat(S.users.filter(u=>u.area===k).map(u=>u.id)))];
+    return `<a class="area-card" href="#${k}">
+      <span class="n">${AREAS[k].n}</span><h3>${AREAS[k].name.replace(" & "," &amp; ")}</h3><p>${AREAS[k].desc}</p>
+      <div class="foot">
+        <div class="meta"><span class="pct num">${areaPct(k)}%</span><span>${ps.length} proyecto${ps.length===1?"":"s"}</span></div>
+        <div class="track"><i style="width:${areaPct(k)}%"></i></div>
+        <div class="meta"><span>${owners.length} persona${owners.length===1?"":"s"}</span><span class="stack">${owners.map(id=>av(user(id),"sm")).join("")}</span></div>
+      </div></a>`}).join("")}</div>
+  <div class="panel feed">
+    <div class="section-title"><h2>Actividad reciente</h2></div>
+    <ul>${S.feed.slice(0,8).map(f=>{const p=S.projects.find(x=>x.id===f.pid);const u=user(f.who);
+      return `<li>${av(u,"sm")}<div><div class="txt"><b>${esc(u.name)}</b> ${esc(f.text)} ${p?`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`:""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}</ul>
+  </div>`;
+}
+function filterBar(){
+  const opts=[["all","Todos"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"],["done","Completado"]];
+  return `<div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>`;
+}
+function viewArea(k){
+  const A=AREAS[k],ps=S.projects.filter(p=>p.area===k);
+  const ids=[...new Set(S.users.filter(u=>u.area===k).map(u=>u.id).concat(ps.map(p=>p.owner)))];
+  const vis=p=>filter==="all"||p.status===filter;
+  return `
+  <div class="area-hero">
+    <div><span class="n">${A.n}</span><h1>${esc(A.name)}</h1><p>${A.desc}</p>
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="color:var(--olive-ink-2);font-size:13.5px">${ids.length} persona${ids.length===1?"":"s"} · ${ps.length} proyecto${ps.length===1?"":"s"}</span></div></div>
+    <div class="ring" style="--p:${areaPct(k)};--size:120px"><div><div><b class="num">${areaPct(k)}%</b><br><span>AVANCE</span></div></div></div>
+  </div>
+  <div class="page-head">${filterBar()}${isAdmin()?`<button class="btn sm" data-act="new" data-area="${k}">+ Proyecto en ${esc(A.short)}</button>`:""}</div>
+  <div class="members">${ids.length?ids.map(id=>{const u=user(id);const mine=ps.filter(p=>p.owner===id);const shown=mine.filter(vis);
+    const avg=mine.length?Math.round(mine.reduce((s,p)=>s+pct(p),0)/mine.length):0;
+    return `<section class="member"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)}</div></div>
+      <span class="sum num">${mine.length} proyecto${mine.length===1?"":"s"} · ${avg}%</span></div>
+      ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,false)).join("")}</div>`:`<div class="empty">${mine.length?"Ningún proyecto con este estado.":"Todavía no tiene proyectos en esta área."}</div>`}</section>`}).join(""):'<div class="empty">Nadie registrado en esta área todavía.</div>'}</div>`;
+}
+function viewTeam(){
+  const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
+  return `<div class="page-head"><div><div class="eyebrow">Solo tú ves esta página</div><h1>Equipo</h1>
+    <p>Las personas que aparecen en el portal. No necesitan cuenta: solo abren el link.</p></div>
+    <button class="btn" data-act="person">+ Agregar persona</button></div>
+  <div class="team-list">${S.users.map(u=>{const n=S.projects.filter(p=>p.owner===u.id).length;
+    return `<div class="team-row">${av(u)}<div class="tm"><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)} · ${esc(areaName(u.area))}</div></div>
+      <span class="hint num">${n} proyecto${n===1?"":"s"}</span><button class="btn ghost sm" data-act="person" data-id="${esc(u.id)}">${ICON.edit}Editar</button></div>`}).join("")||'<div class="empty">Agrega a la primera persona.</div>'}</div>`;
+}
+
+/* ---------- Finanzas: vive en un link privado aparte ---------- */
+function viewFinLink(){return `<div class="lockwrap"><div class="lockbox">
+  <div class="lockic">${ICON.lock}</div>
+  <div><div class="eyebrow">Acceso privado</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
+  <p style="color:var(--ink-2);margin:6px 0 0">Las proyecciones de KORA están en un link aparte, solo para las personas autorizadas.</p></div>
+  <a class="btn" href="${esc(STATIC.finanzasUrl)}" target="_blank" rel="noopener" style="justify-content:center;text-decoration:none">Abrir Finanzas</a>
+  <p class="hint">Si no te abre, pídele acceso a Eduardo.</p></div></div>`}
+function viewLock(){return `<div class="lockwrap"><form class="lockbox" id="finForm" autocomplete="off">
+  <div class="lockic">${ICON.lock}</div>
+  <div><div class="eyebrow">Acceso restringido</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
+  <p style="color:var(--ink-2);margin:6px 0 0">Proyecciones de KORA en El Salvador. Escribe la contraseña de Finanzas.</p></div>
+  <label>Contraseña<input id="finP" type="password" autocomplete="current-password" required></label>
+  <div class="lockerr" id="finErr" role="alert"></div>
+  <button class="btn" type="submit">Entrar a finanzas</button></form></div>`}
+function bindLock(){const f=$("#finForm");$("#finP").focus();f.addEventListener("submit",async e=>{e.preventDefault();
+  const m=await signIn(CFG.financeEmail||"fin",$("#finP").value);if(m){$("#finErr").textContent=m;$("#finP").value="";$("#finP").focus()}})}
+function finHead(){return `<div class="finbar"><span class="eyebrow">${ICON.lock} Finanzas · acceso protegido${isAdmin()?" · puedes editar":" · solo lectura"}</span>
+  ${role==="fin"?'<button class="btn ghost sm" data-act="logout">Cerrar finanzas</button>':""}</div>`}
+let finStarted=false;
+function startFin(){if(finStarted)return;finStarted=true;try{initFin()}catch(e){console.error(e)}}
+const snapObj=d=>({exists:!!d,data:()=>d,metadata:{}});
+window.KORA_FIN={ // lo usa el modelo financiero (script de abajo) para leer y guardar sus números
+  canWrite:()=>isAdmin(),
+  db:async()=>({doc:id=>({
+    set:async d=>{if(!isAdmin())throw{code:"permission_denied"};
+      if(!LIVE){try{localStorage.setItem(KEY+"-fin-"+id,JSON.stringify(d))}catch(e){}return}
+      const r=await sb.from("finance_docs").upsert({id,data:d,updated_at:new Date().toISOString()});if(r.error)throw{code:"permission_denied"}},
+    onSnapshot:(cb,err)=>{const get=async()=>{
+        if(!LIVE){let d=null;try{d=JSON.parse(localStorage.getItem(KEY+"-fin-"+id)||"null")}catch(e){}cb(snapObj(d));return}
+        const r=await sb.from("finance_docs").select("data").eq("id",id).maybeSingle();
+        if(r.error){err&&err(r.error);return}cb(snapObj(r.data?r.data.data:null))};
+      get();if(LIVE)sb.channel("fin").on("postgres_changes",{event:"*",schema:"public",table:"finance_docs"},get).subscribe();}
+  })}),
+  user:async()=>({id:async()=>me,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:user(i).name}]))})
+};
+
+function route(){
+  const h=location.hash.slice(1)||"pulso";
+  renderShell();
+  const v=$("#view");
+  if(h==="finanzas"){ $("#fin").hidden=true;v.innerHTML=viewFinLink();return; }
+  if(h==="finanzas"){ if(canFin()){v.innerHTML=finHead();$("#fin").hidden=false;startFin();} else {$("#fin").hidden=true;v.innerHTML=viewLock();bindLock();} return; }
+  $("#fin").hidden=true;
+  if(AREAS[h])v.innerHTML=viewArea(h);
+  else if(h==="equipo"&&isAdmin())v.innerHTML=viewTeam();
+  else v.innerHTML=viewPulso();
+}
+let lastHash=location.hash;
+window.addEventListener("hashchange",()=>{if(location.hash!==lastHash){filter="all";lastHash=location.hash}route();window.scrollTo(0,0)});
+
+/* ---------- Detalle de proyecto ---------- */
+let openId=null;
+function openDrawer(id){openId=id;renderDrawer();$("#drawer").classList.add("on");$("#drawer").setAttribute("aria-hidden","false");$("#scrim").classList.add("on")}
+function closeDrawer(){openId=null;$("#drawer").classList.remove("on");$("#drawer").setAttribute("aria-hidden","true");$("#scrim").classList.remove("on")}
+$("#scrim").onclick=()=>{closeDrawer();closeModal()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();closeDrawer()}});
+function renderDrawer(){
+  const p=S.projects.find(x=>x.id===openId);if(!p){closeDrawer();return}
+  const u=user(p.owner),ed=isAdmin(),v=pct(p);
+  $("#drawer").innerHTML=`
+  <header>
+    <button class="iconbtn x" id="dClose" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="eyebrow">${AREAS[p.area]?AREAS[p.area].n+" · "+esc(AREAS[p.area].name):""}${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</div>
+    <h2>${esc(p.title)}</h2>
+    <div style="display:flex;align-items:center;gap:12px"><div class="track" style="flex:1;height:10px"><i style="width:${v}%"></i></div><b class="num" style="font-family:var(--f-display)">${v}%</b></div>
+  </header>
+  <div class="body">
+    <p style="margin:0;color:var(--ink-2)">${esc(p.desc)}</p>
+    <dl class="kv">
+      <dt>Responsable</dt><dd style="display:flex;align-items:center;gap:8px">${av(u,"sm")}${esc(u.name)}</dd>
+      <dt>Estado</dt><dd>${ed?`<select class="inline" id="dStatus" style="max-width:200px">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select>`:chip(p.status)}</dd>
+      <dt>Fecha meta</dt><dd>${fmtDate(p.due)}</dd>
+    </dl>
+    <div><div class="section-title"><h2 style="font-size:15px">Hitos</h2><span class="eyebrow num">${p.ms.filter(m=>m[1]).length} de ${p.ms.length}</span></div>
+      <div class="ms">${p.ms.map((m,i)=>`<label class="${m[1]?"done":""}" for="ms${i}"><input type="checkbox" id="ms${i}" data-ms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"}><span>${esc(m[0])}</span></label>`).join("")||'<div class="hint">Sin hitos.</div>'}</div>
+      ${ed?`<form class="addrow" id="msAdd" style="margin-top:8px"><input id="msText" placeholder="Agregar hito" maxlength="90"><button class="btn sm ghost" type="submit">Agregar</button></form>`:""}
+    </div>
+    ${p.links.length?`<div><h2 style="font-size:15px;margin-bottom:6px">Entregables</h2><div class="links">${p.links.map(l=>`<a href="${/^(https?:|#)/.test(l[1])?esc(l[1]):"#"}" target="${l[1].startsWith("#")?"_self":"_blank"}" rel="noopener">↗ ${esc(l[0])}</a>`).join("")}</div></div>`:""}
+    <div><h2 style="font-size:15px;margin-bottom:10px">Bitácora</h2>
+      ${ed?`<form class="addrow" id="logAdd" style="margin-bottom:14px"><input id="logText" placeholder="¿Qué avanzó hoy?" maxlength="200"><button class="btn sm" type="submit">Publicar</button></form>`:""}
+      <div class="log">${p.log.map(l=>{const lu=user(l[0]);return `<div class="it">${av(lu,"sm")}<div><div>${esc(l[1])}</div><div class="when">${esc(lu.name)} · ${ago(l[2])}</div></div></div>`}).join("")||'<div class="hint">Sin actualizaciones todavía.</div>'}</div>
+    </div>
+  </div>
+  ${ed?`<footer id="dFoot"><button class="btn ghost sm" id="dEdit">Editar</button><button class="btn danger sm" id="dDel">Borrar</button></footer>`:`<footer><span class="hint">Vista de solo lectura.</span></footer>`}`;
+  $("#dClose").onclick=closeDrawer;
+  if(!ed)return;
+  $("#dStatus").onchange=e=>{p.status=e.target.value;log(`cambió a «${STATUS[p.status]}»`,p.id);save();renderDrawer();route();toast("Estado actualizado")};
+  $("#drawer").querySelectorAll("[data-ms]").forEach(cb=>cb.onchange=()=>{
+    const m=p.ms[+cb.dataset.ms];m[1]=cb.checked?1:0;
+    if(cb.checked)log(`completó «${m[0]}» en`,p.id);
+    if(p.ms.length&&p.ms.every(x=>x[1])&&p.status!=="done"){p.status="done";log("completó",p.id);toast("Proyecto completado")}
+    else if(p.status==="done"&&!cb.checked){p.status="doing"}
+    else if(p.status==="todo"&&cb.checked){p.status="doing"}
+    save();renderDrawer();route();
+  });
+  $("#msAdd").onsubmit=e=>{e.preventDefault();const t=$("#msText").value.trim();if(!t)return;p.ms.push([t,0]);if(p.status==="done")p.status="doing";save();renderDrawer();route();$("#msText").focus()};
+  $("#logAdd").onsubmit=e=>{e.preventDefault();const t=$("#logText").value.trim();if(!t)return;p.log.unshift([me,t,new Date().toISOString()]);log("publicó una actualización en",p.id);save();renderDrawer();route();toast("Actualización publicada")};
+  $("#dEdit").onclick=()=>openModal(p);
+  $("#dDel").onclick=()=>{$("#dFoot").innerHTML=`<div class="confirm">¿Borrar «${esc(p.title)}»? <button class="btn danger sm" id="dYes">Sí, borrar</button><button class="btn ghost sm" id="dNo">Cancelar</button></div>`;
+    $("#dYes").onclick=()=>{S.projects=S.projects.filter(x=>x.id!==p.id);S.feed=S.feed.filter(f=>f.pid!==p.id);pendingFeed=pendingFeed.filter(f=>f.pid!==p.id);save();closeDrawer();route();toast("Proyecto borrado")};
+    $("#dNo").onclick=renderDrawer;};
+}
+
+/* ---------- Crear / editar proyecto ---------- */
+function openModal(p,areaHint){
+  if(!isAdmin())return;
+  const area=p?p.area:(areaHint||"research");
+  const owner=p?p.owner:(S.users.find(u=>u.area===area)||user(me)).id;
+  $("#modal").innerHTML=`<form id="pForm">
+    <h2>${p?"Editar proyecto":"Nuevo proyecto"}</h2>
+    <label class="field" for="fTitle">Nombre<input id="fTitle" required maxlength="80" value="${p?esc(p.title):""}" placeholder="Ej. Encuesta a usuarios en Honduras"></label>
+    <label class="field" for="fDesc">De qué se trata<textarea id="fDesc" maxlength="400" placeholder="Una o dos líneas para que el equipo entienda el objetivo.">${p?esc(p.desc):""}</textarea></label>
+    <div class="grid2">
+      <label class="field" for="fArea">Área<select id="fArea">${AREA_KEYS.map(k=>`<option value="${k}" ${area===k?"selected":""}>${AREAS[k].name}</option>`).join("")}</select></label>
+      <label class="field" for="fOwner">Responsable<select id="fOwner">${S.users.map(u=>`<option value="${esc(u.id)}" ${owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+    </div>
+    <div class="grid2">
+      <label class="field" for="fStatus">Estado<select id="fStatus">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${(p?p.status:"doing")===k?"selected":""}>${l}</option>`).join("")}</select></label>
+      <label class="field" for="fDue">Fecha meta<input type="date" id="fDue" value="${p?esc(p.due):""}"></label>
+    </div>
+    <label class="field" for="fLink">Link a entregable (opcional)<input id="fLink" type="url" placeholder="https://" value=""></label>
+    ${p?"":`<label class="field" for="fMs">Hitos, uno por línea<textarea id="fMs" placeholder="Definir alcance&#10;Recolectar datos&#10;Presentar resultados"></textarea></label>
+    <p class="hint">El avance se calcula con los hitos que vayas marcando.</p>`}
+    <div class="actions"><button type="button" class="btn ghost" id="fCancel">Cancelar</button><button class="btn" type="submit">${p?"Guardar cambios":"Crear proyecto"}</button></div>
+  </form>`;
+  $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>$("#fTitle").focus(),50);
+  $("#fCancel").onclick=closeModal;
+  $("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  $("#pForm").onsubmit=e=>{
+    e.preventDefault();
+    const link=$("#fLink").value.trim();
+    const data={title:$("#fTitle").value.trim(),desc:$("#fDesc").value.trim(),area:$("#fArea").value,owner:$("#fOwner").value,status:$("#fStatus").value,due:$("#fDue").value};
+    if(!data.title)return;
+    if(p){Object.assign(p,data);if(link)p.links.push(["Entregable",link]);log("editó",p.id);save();closeModal();renderDrawer();route();toast("Cambios guardados");return}
+    const ms=($("#fMs").value||"").split("\n").map(s=>s.trim()).filter(Boolean).map(t=>[t,0]);
+    const np={id:newId("p"),example:false,ms,links:link?[["Entregable",link]]:[],log:[],...data};
+    S.projects.unshift(np);log("creó el proyecto",np.id);save();closeModal();route();toast("Proyecto creado");openDrawer(np.id);
+  };
+}
+/* ---------- Agregar / editar persona ---------- */
+function openPerson(u){
+  if(!isAdmin())return;
+  const n=u?S.projects.filter(p=>p.owner===u.id).length:0;
+  $("#modal").innerHTML=`<form id="uForm">
+    <h2>${u?"Editar persona":"Agregar persona"}</h2>
+    <div class="grid2">
+      <label class="field" for="uName">Nombre<input id="uName" required maxlength="40" value="${u?esc(u.name):""}" placeholder="Ej. Andrea"></label>
+      <label class="field" for="uRole">Rol<input id="uRole" maxlength="50" value="${u?esc(u.role):""}" placeholder="Ej. Analista de contenido"></label>
+    </div>
+    <label class="field" for="uArea">Área<select id="uArea">${AREA_OPTS.map(([k,l])=>`<option value="${k}" ${(u?u.area:"growth")===k?"selected":""}>${l}</option>`).join("")}</select></label>
+    <div class="actions" id="uAct">${u?`<button type="button" class="btn danger sm" id="uDel" style="margin-right:auto">Quitar</button>`:""}<button type="button" class="btn ghost" id="uCancel">Cancelar</button><button class="btn" type="submit">${u?"Guardar":"Agregar"}</button></div>
+  </form>`;
+  $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>$("#uName").focus(),50);
+  $("#uCancel").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  if(u)$("#uDel").onclick=()=>{
+    if(n){toast(`Tiene ${n} proyecto${n===1?"":"s"}. Pásalos a otra persona primero.`);return}
+    if(u.id===me){toast("No puedes quitarte a ti mismo.");return}
+    S.users=S.users.filter(x=>x.id!==u.id);save();closeModal();route();toast("Persona quitada")};
+  $("#uForm").onsubmit=e=>{e.preventDefault();
+    const name=$("#uName").value.trim();if(!name)return;const area=$("#uArea").value;
+    const roleTxt=$("#uRole").value.trim()||(area==="dir"?"Co-founder":AREAS[area].name);
+    if(u){Object.assign(u,{name,role:roleTxt,area});toast("Cambios guardados")}
+    else{const nu={id:newId("u"),name,role:roleTxt,area,color:COLORS[S.users.length%COLORS.length]};S.users.push(nu);me&&log(`agregó a ${name} al equipo`);toast(`${name} ya aparece en el portal`)}
+    save();closeModal();route();};
+}
+function closeModal(){const m=$("#modal");if(!m.classList.contains("on"))return;m.classList.remove("on");if(!openId)$("#scrim").classList.remove("on")}
+
+/* ---------- Arranque ---------- */
+async function boot(){
+  $("#app").hidden=false;
+  try{await resolveRole()}catch(e){console.error(e)}
+  try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
+  if(!location.hash)history.replaceState(null,"","#pulso");
+  route();live();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
+</script>
+<script>
+function initFin(){
+
+// Motor del modelo: función pura, sin DOM.
+function runModel(p) {
+  const H = p.horizon;
+  const rows = [];
+  let free = p.startFree, micro = p.startMicro, pro = p.startPro;
+  // cohortes en oferta: índice = meses ya cumplidos (0,1,2)
+  let offM = new Array(Math.max(0, Math.round(p.offerMonths))).fill(0), offP = new Array(Math.max(0, Math.round(p.offerMonths))).fill(0);
+  let cash = p.investment, cum = 0;
+  const teamCost = p.team.reduce((a, r) => a + r.qty * r.salary * (1 + p.payrollLoad / 100), 0);
+  const fixed = teamCost + p.tools + p.legal + p.mktFixed + p.other;
+  for (let t = 1; t <= H; t++) {
+    const organic = p.signups0 * Math.pow(1 + p.growth / 100, t - 1);
+    const paidSignups = p.cpl > 0 ? p.mktPaid / p.cpl : 0;
+    const signups = organic + paidSignups;
+    const newPayers = signups * p.convNew / 100;
+    const newFree = signups - newPayers;
+    const proShare = p.mixPro / 100, offerShare = p.offerTake / 100;
+
+    // 1) usuarios Free: churn y conversión al inicio del mes
+    const freeChurned = free * p.churnFree / 100;
+    const freeUp = (free - freeChurned) * p.convFree / 100;
+    free = free - freeChurned - freeUp + newFree;
+
+    // 2) planes regulares: churn y upgrade Micro→Pro
+    const microChurned = micro * p.churnMicro / 100;
+    const proChurned = pro * p.churnPro / 100;
+    const upgrades = (micro - microChurned) * p.upgrade / 100;
+    micro = micro - microChurned - upgrades;
+    pro = pro - proChurned + upgrades;
+
+    // 3) cohortes en oferta (N meses); la que termina pasa al precio normal
+    const N = Math.max(0, Math.round(p.offerMonths));
+    const sM = offM.map(c => c * (1 - p.churnMicro / 100));
+    const sP = offP.map(c => c * (1 - p.churnPro / 100));
+    const endKeep = 1 - p.churnOfferEnd / 100;
+    const lastM = N > 0 ? sM[N - 1] : 0, lastP = N > 0 ? sP[N - 1] : 0;
+    micro += lastM * endKeep;
+    pro += lastP * endKeep;
+    const offerChurnLost = (offM.reduce((a, b) => a + b, 0) - sM.reduce((a, b) => a + b, 0) + lastM * (1 - endKeep))
+      + (offP.reduce((a, b) => a + b, 0) - sP.reduce((a, b) => a + b, 0) + lastP * (1 - endKeep));
+    const take = N > 0 ? offerShare : 0;
+    offM = N > 0 ? [newPayers * (1 - proShare) * take, ...sM.slice(0, N - 1)] : [];
+    offP = N > 0 ? [newPayers * proShare * take, ...sP.slice(0, N - 1)] : [];
+
+    // 4) nuevos pagadores sin oferta + Free que suben de plan
+    micro += newPayers * (1 - proShare) * (1 - take) + freeUp * (1 - proShare);
+    pro += newPayers * proShare * (1 - take) + freeUp * proShare;
+
+    const offerMicro = offM.reduce((a, b) => a + b, 0);
+    const offerPro = offP.reduce((a, b) => a + b, 0);
+    const paying = micro + pro + offerMicro + offerPro;
+
+    // Ingresos
+    const gross = micro * p.priceMicro + pro * p.pricePro
+      + offerMicro * p.offerMicro + offerPro * p.offerPro;
+    const mrr = gross / (1 + p.iva / 100);           // sin IVA
+    const storeFees = mrr * (p.storeShare / 100) * (p.storeComm / 100);
+    const payFees = mrr * (1 - p.storeShare / 100) * (p.payPct / 100)
+      + paying * (1 - p.storeShare / 100) * p.payFixed;
+    const netRev = mrr - storeFees - payFees;
+
+    // Costos variables
+    const varFree = free * (p.infraFree + p.aiFree);
+    const varPaid = (micro + offerMicro) * (p.infraPaid + p.aiMicro + p.support)
+      + (pro + offerPro) * (p.infraPaid + p.aiPro + p.support);
+    const varCost = varFree + varPaid;
+    const totalCost = storeFees + payFees + varCost + fixed + p.mktPaid;
+    const profit = mrr - totalCost;
+    cum += profit; cash += profit;
+
+    const churnedPaid = microChurned + proChurned + offerChurnLost;
+    rows.push({
+      t, signups, newPayers, free, micro, pro, offerMicro, offerPro, paying,
+      gross, mrr, storeFees, payFees, netRev, varFree, varPaid, varCost, fixed,
+      mktPaid: p.mktPaid, totalCost, profit, cum, cash, churnedPaid, freeUp,
+      newPaidTotal: newPayers + freeUp
+    });
+  }
+  return summarize(rows, p, fixed);
+}
+
+function summarize(rows, p, fixed) {
+  const at = m => rows[Math.min(m, rows.length) - 1];
+  let beMonth = null;
+  for (const r of rows) { if (r.profit >= 0) { beMonth = r.t; break; } }
+  let runwayEnd = null;
+  for (const r of rows) { if (r.cash < 0) { runwayEnd = r.t; break; } }
+  const minCash = Math.min(...rows.map(r => r.cash));
+  const last = rows[rows.length - 1];
+  const prevPaying = rows.length > 1 ? rows[rows.length - 2].paying : last.paying;
+  const arpu = last.paying > 0 ? last.mrr / last.paying : 0;
+  const contrib = last.paying > 0 ? (last.netRev - last.varCost) / last.paying : 0;
+  const churnPaid = prevPaying > 0 ? last.churnedPaid / prevPaying : 0;
+  const ltv = churnPaid > 0 ? contrib / churnPaid : 0;
+  const m12 = at(12);
+  const cac = m12.newPaidTotal > 0 ? (p.mktPaid + p.mktFixed) / m12.newPaidTotal : 0;
+  const payback = contrib > 0 ? cac / contrib : Infinity;
+  const beUsers = contrib > 0 ? Math.ceil((fixed + p.mktPaid) / contrib) : Infinity;
+  return { rows, fixed, beMonth, runwayEnd, minCash, arpu, contrib, churnPaid, ltv, cac,
+    ltvCac: cac > 0 ? ltv / cac : 0, payback, beUsers,
+    mrr12: m12.mrr, mrr36: last.mrr, paying36: last.paying };
+}
+
+
+
+const GLOSS={be:"Break-even: el primer mes en que los ingresos cubren todos los costos.",cap:"La pérdida acumulada más grande antes de empezar a ganar. Es el dinero total que hay que invertir para llegar al break-even.",
+ liq:"Liquidez (capital de trabajo): lo que tenemos a corto plazo (efectivo + por cobrar + otros) menos lo que debemos a corto plazo.",
+ rc:"Razón corriente: activos de corto plazo ÷ deudas de corto plazo. Arriba de 1 = podemos pagar lo que debemos pronto.",
+ eq:"Patrimonio: activos − pasivos. Lo que vale KORA en libros. Crece con las ganancias y baja con las pérdidas.",
+ run:"Runway: hasta qué mes alcanza el efectivo si no entra inversión nueva.",
+ need:"Costos fijos ÷ lo que deja en promedio cada cliente de pago.",mrr:"MRR: ingreso mensual recurrente. Clientes × precio, sin IVA.",
+ ltv:"LTV: lo que deja un cliente durante todo el tiempo que se queda. Margen mensual ÷ churn.",churn:"Churn: % de clientes que cancelan cada mes.",
+ payback:"Payback: meses que tarda un cliente en devolver lo que costó conseguirlo.",cac:"CAC: gasto de marketing ÷ clientes de pago nuevos (mes 12)."};
+const help=k=>`<button type="button" class="help" aria-label="Qué significa">?<span class="tip" role="tooltip">${GLOSS[k]}</span></button>`;
+const G=[
+ {g:"Precios",f:[["priceMicro","Micro","$/mes",0,30,0.01,"kora"],["pricePro","Pro","$/mes",0,60,0.01,"kora"],["offerMicro","Oferta Micro","$/mes",0,30,0.5,"kora"],["offerPro","Oferta Pro","$/mes",0,60,0.5,"kora"],["offerMonths","Meses de oferta","meses",0,6,1,"kora"],["iva","IVA incluido","%",0,13,13,"def"]]},
+ {g:"Clientes",f:[["startFree","Negocios hoy","",0,500,1,"kora"],["signups0","Registros mes 1","/mes",0,500,1,"sup"],["growth","Crecimiento registros","%/mes",0,30,0.5,"sup"],["convNew","Pagan desde el inicio","%",0,50,0.5,"sup"],["convFree","Free → pago cada mes","%",0,15,0.1,"sup"],["mixPro","Eligen Pro","%",0,100,1,"sup"],["offerTake","Usan la oferta","%",0,100,1,"sup"],["upgrade","Micro → Pro cada mes","%",0,10,0.1,"sup"]]},
+ {g:"Churn mensual",f:[["churnMicro","Micro","%",0,20,0.1,"sup"],["churnPro","Pro","%",0,20,0.1,"sup"],["churnFree","Free","%",0,30,0.5,"sup"],["churnOfferEnd","Al terminar la oferta","%",0,90,1,"sup"]]},
+ {g:"Adquisición",f:[["mktPaid","Anuncios","$/mes",0,10000,50,"sup"],["cpl","Costo por registro","$",0.5,40,0.5,"sup"]]},
+ {g:"Costo por usuario",f:[["aiMicro","IA · Micro","$/mes",0,5,0.01,"sup"],["aiPro","IA · Pro","$/mes",0,8,0.01,"sup"],["aiFree","IA · Free","$/mes",0,3,0.01,"sup"],["infraPaid","Nube · pago","$/mes",0,3,0.01,"sup"],["infraFree","Nube · Free","$/mes",0,3,0.01,"sup"],["support","Soporte · pago","$/mes",0,3,0.01,"sup"],["payPct","Comisión cobro","%",0,10,0.1,"sup"],["payFixed","Comisión fija","$",0,1,0.05,"sup"]]}
+];
+const TAG={kora:"Dato KORA",sup:"Supuesto",def:"Por definir"};
+const D0={priceMicro:5.55,pricePro:14.99,offerMicro:1,offerPro:5,offerMonths:1,iva:0,startFree:30,signups0:40,growth:7,convNew:8,convFree:2,mixPro:25,offerTake:70,upgrade:1,
+ churnMicro:6,churnPro:4,churnFree:8,churnOfferEnd:30,payrollLoad:16.25,mktPaid:300,cpl:4,
+ aiMicro:0.3,aiPro:0.8,aiFree:0.05,infraPaid:0.3,infraFree:0.1,support:0.2,payPct:3.5,payFixed:0.3};
+const SCEN={cons:{growth:0.7,conv:0.75,churn:1.25},base:{growth:1,conv:1,churn:1},opt:{growth:1.3,conv:1.25,churn:0.8}};
+const KEY="kora-ruta-v6";
+const TEAM0=[{n:"Colaborador 1",r:"Desarrollo",s:1200},{n:"Colaborador 2",r:"Desarrollo",s:1200},{n:"Colaborador 3",r:"Diseño y marketing",s:800}];
+// convierte filas viejas (puesto × personas) en una fila por colaborador
+const perPerson=t=>(t||[]).flatMap(x=>x.q!==undefined&&x.r===undefined?Array.from({length:Math.max(0,Math.round(+x.q||0))},(_,i)=>({n:"Colaborador",r:x.n,s:+x.s||0})):[{n:x.n||"",r:x.r||"",s:+x.s||0}]);
+const COSTS0=[{n:"Herramientas y software",v:300},{n:"Contabilidad y legal",v:250},{n:"Marketing fijo (contenido)",v:300},{n:"Otros",v:150}];
+const B0={start:"2026-12",cash:0,ar:0,oca:0,fixedA:0,ap:0,oliab:0,loan:0,loanPay:0};
+const BF=[["start","Mes 1 del modelo","month"],["cash","Efectivo en banco","$"],["ar","Cuentas por cobrar","$"],["oca","Otros activos corrientes","$"],["fixedA","Equipo y activos fijos","$"],
+ ["ap","Cuentas por pagar (proveedores)","$"],["oliab","Otros pasivos de corto plazo","$"],["loan","Préstamos (saldo)","$"],["loanPay","Abono mensual al préstamo","$/mes"]];
+const fresh=()=>({sc:"base",horizon:36,p:{...D0},team:TEAM0.map(x=>({...x})),costs:COSTS0.map(x=>({...x})),bal:{...B0}});
+let S=fresh();
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s){if(s.sc in SCEN)S.sc=s.sc;}}catch(e){}
+// ---- guardado compartido (db): precios, supuestos, equipo y costos son los mismos para todo el equipo
+const DOC="modelo/actual";let DB=null,USER=null,lastShared=null,writeTimer=null,writing=false,pending=false,canWrite=true,remoteMeta=null;
+const shared=()=>JSON.stringify({p:S.p,team:S.team,costs:S.costs,bal:S.bal});
+function setStatus(kind,html){const el=document.getElementById("saveStatus");if(!el)return;el.className="savest "+kind;el.innerHTML=html;}
+async function whoSaved(){if(!remoteMeta||!remoteMeta.by||!USER)return"";try{const ps=await USER.profiles([remoteMeta.by]);const n=(ps[remoteMeta.by]||{}).name||"";return n?" por "+n.replace(/[<>&]/g,""):"";}catch(e){return"";}}
+function ago(iso){if(!iso)return"";const m=Math.round((Date.now()-Date.parse(iso))/60000);return m<1?"hace un momento":m<60?"hace "+m+" min":m<1440?"hace "+Math.round(m/60)+" h":"el "+new Date(iso).toLocaleDateString("es");}
+async function showSaved(){setStatus("ok",`● Guardado para todo el equipo${await whoSaved()} · ${ago(remoteMeta&&remoteMeta.at)}`);}
+let lastRemote=null;
+const dirty=()=>lastShared!==null&&shared()!==lastShared;
+function refreshSave(){const b=document.getElementById("saveBtn"),d=document.getElementById("discardBtn");if(!b)return;const on=!!DB&&canWrite&&dirty();
+ b.disabled=!on;{const b2=document.getElementById("saveBtn2");if(b2)b2.disabled=!on;}d.hidden=!dirty();if(dirty())setStatus("busy","● Tienes cambios sin guardar. Presiona Guardar cambios para que el equipo los vea.");}
+async function doWrite(){if(writing||!DB||!canWrite)return;writing=true;const body=shared();setStatus("busy","● Guardando…");
+ try{const id=USER?await USER.id():null;const at=new Date().toISOString();
+  await DB.doc(DOC).set({...JSON.parse(body),by:id||"",at});lastShared=body;remoteMeta={by:id,at};lastRemote={...JSON.parse(body),by:id,at};await showSaved();}
+ catch(e){const c=e&&e.code;if(c==="permission_denied"||c==="not_granted"||c==="unauthenticated"){canWrite=false;setStatus("warn","● Solo puedes ver. No tienes permiso para guardar cambios.");}else setStatus("warn","● No se pudo guardar. Intenta de nuevo.");}
+ writing=false;refreshSave();}
+function applyRemote(d){if(!d||!d.p)return;
+ S.p={...D0,...d.p};S.bal={...B0,...(d.bal||{})};if(Array.isArray(d.team))S.team=perPerson(d.team);if(Array.isArray(d.costs))S.costs=d.costs;lastShared=shared();remoteMeta={by:d.by,at:d.at};
+ syncAll();renderListsFull();update(true);showSaved();}
+async function connectShared(){
+ setStatus("busy","● Conectando…");
+ let db=null;try{db=await window.KORA_FIN.db();}catch(e){}canWrite=window.KORA_FIN.canWrite();
+ try{USER=await window.KORA_FIN.user();}catch(e){}
+ if(!db){setStatus("warn","● Sin conexión al guardado compartido: tus cambios solo se ven en esta pantalla.");refreshSave();return;}
+ DB=db;let first=true;const timer=setTimeout(()=>{if(first)setStatus("warn","● Todavía no se pueden cargar los números del equipo.");},10000);
+ DB.doc(DOC).onSnapshot(s=>{if(s.metadata&&s.metadata.hasPendingWrites)return;
+   if(first&&!(s.metadata&&s.metadata.fromCache)){first=false;clearTimeout(timer);}
+   if(s.exists){const d=s.data();lastRemote=d;const body=JSON.stringify({p:d.p,team:d.team,costs:d.costs,bal:{...B0,...(d.bal||{})}});
+     if(writing)return;
+     if(lastShared===null||!dirty()){if(body!==lastShared)applyRemote(d);else{remoteMeta={by:d.by,at:d.at};showSaved();}}
+     else setStatus("warn","● Otra persona guardó cambios mientras editabas. Guarda los tuyos o descártalos para ver los suyos.");}
+   else{lastShared=shared();setStatus("busy","● Aún no hay números guardados.");refreshSave();}},
+  e=>{clearTimeout(timer);setStatus("warn","● Se perdió la conexión con el guardado compartido.");});}
+window.addEventListener("beforeunload",e=>{if(dirty()){e.preventDefault();e.returnValue="";}});
+const save=(fromRemote)=>{try{localStorage.setItem(KEY,JSON.stringify({sc:S.sc,horizon:S.horizon}));}catch(e){}refreshSave();};
+const money=(v,d=0)=>(v<0?"−$":"$")+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const kmoney=v=>Math.abs(v)>=10000?(v<0?"−$":"$")+(Math.abs(v)/1000).toFixed(Math.abs(v)>=100000?0:1)+"k":money(v);
+const int=v=>Math.round(v).toLocaleString("en-US");
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function md(t){const m=/^(\d{4})-(\d{2})$/.exec(S.bal&&S.bal.start||"");const y0=m?+m[1]:2026,m0=m?+m[2]-1:11;const i=m0+t-1;return{y:y0+Math.floor(i/12),m:((i%12)+12)%12};}
+const fm=t=>{const d=md(t);return MES[d.m]+" "+d.y;};
+const fs=t=>{const d=md(t);return MES[d.m]+" "+String(d.y).slice(2);};
+
+function params(){const p=S.p,m=SCEN[S.sc];
+ return{...p,horizon:S.horizon,startMicro:0,startPro:0,market:350000,storeShare:0,storeComm:15,team:S.team.map(r=>({qty:1,salary:+r.s||0})),payrollLoad:p.payrollLoad,tools:S.costs.reduce((x,c)=>x+(+c.v||0),0),legal:0,mktFixed:0,other:0,investment:0,
+  growth:p.growth*m.growth,signups0:p.signups0*m.growth,convNew:p.convNew*m.conv,convFree:p.convFree*m.conv,
+  churnFree:p.churnFree*m.churn,churnMicro:p.churnMicro*m.churn,churnPro:p.churnPro*m.churn,churnOfferEnd:Math.min(100,p.churnOfferEnd*m.churn)};}
+
+// ---- supuestos
+function buildInputs(){document.getElementById("sgrid").innerHTML=G.map(g=>`<div class="sgroup"><h3>${g.g}</h3>${g.f.map(([id,l,u,mn,mx,st,src])=>`
+ <div class="field"><div class="frow"><label class="flab" for="in-${id}">${l} <span class="src ${src}">${TAG[src]}</span></label>
+ <span class="fval"><input type="number" id="in-${id}" data-id="${id}" min="${mn}" max="${mx}" step="${st}"><span class="unit">${u}</span></span></div>
+ <input type="range" id="rg-${id}" data-id="${id}" min="${mn}" max="${mx}" step="${st}" aria-label="${l}"></div>`).join("")}</div>`).join("");}
+function sync(id){const a=document.getElementById("in-"+id),b=document.getElementById("rg-"+id);if(a&&document.activeElement!==a)a.value=S.p[id];if(b)b.value=S.p[id];}
+const syncAll=()=>Object.keys(D0).forEach(sync);
+
+// ---- equipo y costos fijos (listas editables)
+function renderListsFull(){
+ const t=document.getElementById("teamList"),c=document.getElementById("costList");
+ t.innerHTML=`<div class="lrow lhead"><span>Colaborador</span><span>Rol</span><span>Salario/mes</span><span></span></div>`+S.team.map((r,i)=>`<div class="lrow">
+  <input type="text" id="tn${i}" aria-label="Nombre del colaborador" value="${String(r.n).replace(/"/g,"&quot;")}" data-l="team" data-i="${i}" data-k="n">
+  <input type="text" id="tr${i}" aria-label="Rol" value="${String(r.r||"").replace(/"/g,"&quot;")}" data-l="team" data-i="${i}" data-k="r">
+  <input type="number" id="ts${i}" aria-label="Salario mensual" min="0" step="50" value="${r.s}" data-l="team" data-i="${i}" data-k="s">
+  <button type="button" class="btn icon" aria-label="Quitar colaborador" data-del="team" data-i="${i}">×</button></div>`).join("");
+ c.innerHTML=`<div class="lrow lrow2 lhead"><span>Costo</span><span>$/mes</span><span></span></div>`+S.costs.map((r,i)=>`<div class="lrow lrow2">
+  <input type="text" id="cn${i}" aria-label="Nombre del costo" value="${String(r.n).replace(/"/g,"&quot;")}" data-l="costs" data-i="${i}" data-k="n">
+  <input type="number" id="cv${i}" aria-label="Monto mensual" min="0" step="10" value="${r.v}" data-l="costs" data-i="${i}" data-k="v">
+  <button type="button" class="btn icon" aria-label="Quitar costo" data-del="costs" data-i="${i}">×</button></div>`).join("");
+ renderLists(params());}
+function renderLists(p){
+ const people=S.team.length,base=S.team.reduce((x,r)=>x+(+r.s||0),0),tot=base*(1+p.payrollLoad/100);
+ const ct=S.costs.reduce((x,c)=>x+(+c.v||0),0);
+ const te=document.getElementById("teamTotal"),ce=document.getElementById("costTotal");
+ if(te)te.innerHTML=`${people} ${people===1?"colaborador":"colaboradores"} · <b>${money(tot)}/mes</b> con cargas`;
+ if(ce)ce.innerHTML=`<b>${money(ct)}/mes</b>`;
+ const ft=document.getElementById("fixedTotal");if(ft)ft.innerHTML=`Total costos fijos: <b>${money(tot+ct)}/mes</b>`;}
+function bindLists(){
+ const box=document.getElementById("fixedBox");
+ box.addEventListener("input",e=>{const d=e.target.dataset;if(d.id){const v=parseFloat(e.target.value);if(!isNaN(v)){S.p[d.id]=v;update();}return;}if(!d.l)return;const L=S[d.l][+d.i];L[d.k]=(d.k==="n"||d.k==="r")?e.target.value:(parseFloat(e.target.value)||0);update();});
+ box.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.del){S[b.dataset.del].splice(+b.dataset.i,1);renderListsFull();update();}
+  if(b.id==="addTeam"){S.team.push({n:"Colaborador "+(S.team.length+1),r:"",s:600});renderListsFull();update();}
+  if(b.id==="addCost"){S.costs.push({n:"Nuevo costo",v:100});renderListsFull();update();}});}
+
+// ---- precios
+function planCard(name,price,keep,churn,cac,offerTotal,hl){
+ const net=price/(1+S.p.iva/100),ltv=churn>0?keep/(churn/100):0,pb=keep>0?cac/keep:Infinity,om=S.p.offerMonths,offerCost=(price-offerTotal)*om;
+ return `<div class="plan ${hl?"hl":""}"><div class="plan-h"><b>${name}</b><span class="src kora">Dato KORA</span></div>
+  <div class="price">${money(price,2)} <small>/ mes</small></div>
+  <div class="rows">
+   <div class="r"><span>Le queda a KORA</span><b class="good">${money(keep,2)}</b></div>
+   <div class="r"><span>Margen</span><b>${Math.round(keep/net*100)}%</b></div>
+   <div class="r"><span>Se queda en promedio</span><b>${churn>0?Math.round(100/churn):"—"} meses</b></div>
+   <div class="r"><span>LTV ${help("ltv")}</span><b>${money(ltv)}</b></div>
+   <div class="r"><span>Payback ${help("payback")}</span><b>${isFinite(pb)?pb.toFixed(1)+" meses":"—"}</b></div>
+   <div class="r"><span>Oferta: ${money(offerTotal)} ${om===1?"el primer mes":"por "+om+" meses"}</span><b class="bad">−${money(offerCost,2)}</b></div>
+  </div></div>`;}
+function freeCard(cost){const p=S.p;return `<div class="plan"><div class="plan-h"><b>Free</b><span class="src kora">Dato KORA</span></div>
+  <div class="price">$0 <small>/ mes</small></div><div class="rows">
+  <div class="r"><span>Le cuesta a KORA</span><b class="bad">−${money(cost,2)}</b></div>
+  <div class="r"><span>Pasan a pagar cada mes</span><b>${p.convFree}%</b></div>
+  <div class="r"><span>Se van cada mes ${help("churn")}</span><b>${p.churnFree}%</b></div>
+  <div class="r"><span>Costo de 1,000 usuarios Free</span><b class="bad">−${money(cost*1000)}/mes</b></div></div></div>`;}
+
+// ---- roadmap
+function milestones(R){const rows=R.rows,ms=[];const first=(fn)=>{const r=rows.find(fn);return r?r.t:null;};
+ [[100,"100 clientes"],[500,"500 clientes"],[1000,"1,000 clientes"]].forEach(([n,l])=>{const t=first(r=>r.paying>=n);if(t)ms.push({t,v:l,m:fm(t)});});
+ [[1000,"MRR $1k"],[5000,"MRR $5k"],[10000,"MRR $10k"]].forEach(([n,l])=>{const t=first(r=>r.mrr>=n);if(t)ms.push({t,v:l,m:fm(t)});});
+ if(R.beMonth)ms.push({t:R.beMonth,v:"Break-even",m:fm(R.beMonth),key:1});
+ return ms.sort((a,b)=>a.t-b.t);}
+function renderRoad(R){const H=S.horizon,pct=t=>((t-0.5)/H*100);
+ const be=R.beMonth,l=Math.min(3,H),p2=be?be-1-l:H-l,p3=be?H-be+1:0;
+ let h=`<div class="phases"><div class="ph p1" style="width:${l/H*100}%">${l/H>0.1?"Lanzamiento":""}</div>${p2>0?`<div class="ph p2" style="width:${p2/H*100}%">Tracción</div>`:""}${p3>0?`<div class="ph p3" style="width:${p3/H*100}%">${p3/H>0.1?"Rentable":""}</div>`:""}</div>`;
+ const ms=milestones(R);let lastUp=-99,lastDown=-99;
+ ms.forEach(m=>{const x=pct(m.t);let pos;if(x-lastUp>=11){pos="up";lastUp=x;}else if(x-lastDown>=11){pos="down";lastDown=x;}else return;
+  h+=`<div class="ms ${pos} ${m.key?"key":""} ${m.bad?"bad":""}" style="left:${Math.min(95,Math.max(5,x))}%"><span class="mv">${m.v}</span><span class="mm">${m.m}</span><span class="pin"></span></div>`;});
+ const tk=[];for(let t=1;t<=H;t+=H>36?6:3)tk.push(`<span>${fs(t)}</span>`);tk.push(`<span>${fs(H)}</span>`);
+ document.getElementById("road").innerHTML=h+`<div class="ticks">${tk.join("")}</div>`;
+ const at=t=>R.rows[Math.max(1,Math.min(H,t))-1];
+ const st=(title,from,to)=>{if(to<from)return"";const r=at(to);return `<div class="pst"><h3>${title} · ${fs(from)} – ${fs(to)}</h3><div class="g">
+  <div><span>Clientes de pago</span><b>${int(r.paying)}</b></div><div><span>MRR</span><b>${kmoney(r.mrr)}</b></div><div><span>Resultado mes</span><b style="color:var(${r.profit<0?"--bad":"--good"})">${kmoney(r.profit)}</b></div></div></div>`;};
+ document.getElementById("phstats").innerHTML=st("Lanzamiento",1,l)+st("Tracción",l+1,be?be-1:H)+(be?st("Rentable",be,H):"");}
+
+// ---- gráficas
+const css=n=>getComputedStyle(document.getElementById("fin")).getPropertyValue(n).trim();
+const beLine={id:"beLine",afterDatasetsDraw(ch,a,o){if(!o||!o.month)return;const x=ch.scales.x.getPixelForValue(o.month-1),{top,bottom,right}=ch.chartArea,c=ch.ctx;
+ c.save();c.strokeStyle=o.color;c.setLineDash([5,4]);c.lineWidth=1.5;c.beginPath();c.moveTo(x,top);c.lineTo(x,bottom);c.stroke();c.setLineDash([]);
+ c.fillStyle=o.color;c.font="600 11.5px Inter, sans-serif";const left=x<right-110;c.textAlign=left?"left":"right";c.fillText("Break-even · "+fs(o.month),x+(left?6:-6),top+12);c.restore();}};
+let charts={};const mk=(id,cfg)=>{if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);};
+function opts(fmt){const m=css("--muted"),g=css("--line");return{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+ plugins:{legend:{labels:{color:m,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>c.dataset.label+": "+fmt(c.parsed.y)}}},
+ scales:{x:{ticks:{color:m,maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{display:false}},y:{ticks:{color:m,callback:v=>fmt(v)},grid:{color:g},border:{display:false}}}};}
+function drawCharts(R){if(typeof Chart==="undefined")return;Chart.defaults.font.family="Inter, ui-sans-serif, system-ui, sans-serif";Chart.defaults.font.size=11;
+ const L=R.rows.map(r=>fs(r.t)),o=opts(v=>kmoney(v));o.plugins.beLine={month:R.beMonth,color:css("--brand")};
+ mk("chFlow",{type:"line",plugins:[beLine],data:{labels:L,datasets:[
+  {label:"Ingresos (MRR)",data:R.rows.map(r=>r.mrr),borderColor:css("--in"),backgroundColor:css("--in"),borderWidth:3,pointRadius:0},
+  {label:"Costos",data:R.rows.map(r=>r.totalCost),borderColor:css("--out"),backgroundColor:css("--out"),borderWidth:3,pointRadius:0}]},options:o});
+ const o2=opts(v=>int(v));o2.scales.y.stacked=true;o2.scales.x.stacked=true;
+ mk("chUsers",{type:"bar",data:{labels:L,datasets:[
+  {label:"Pro",data:R.rows.map(r=>r.pro),backgroundColor:css("--brand")},{label:"Micro",data:R.rows.map(r=>r.micro),backgroundColor:css("--accent")},
+  {label:"En oferta",data:R.rows.map(r=>r.offerMicro+r.offerPro),backgroundColor:"color-mix(in srgb, "+css("--accent")+" 40%, transparent)"}]},options:o2});
+ const o3=opts(v=>kmoney(v));o3.plugins.legend={display:false};
+ mk("chCash",{type:"bar",data:{labels:L,datasets:[{label:"Resultado del mes",data:R.rows.map(r=>r.profit),backgroundColor:R.rows.map(r=>r.profit>=0?css("--good"):css("--bad")),borderRadius:2}]},options:o3});}
+
+// ---- tabla por año
+function yearTable(R){const H=S.horizon,Y=Math.ceil(H/12);let h=`<thead><tr><th></th>${Array.from({length:Y},(_,i)=>`<th>Año ${i+1}<br><span style="font-weight:500">${fs(i*12+1)} – ${fs(Math.min(H,(i+1)*12))}</span></th>`).join("")}</tr></thead><tbody>`;
+ const ys=Array.from({length:Y},(_,i)=>R.rows.slice(i*12,(i+1)*12));
+ const line=(lab,fn,cls)=>`<tr><td>${lab}</td>${ys.map(y=>{const v=fn(y);return `<td class="${cls?cls(v):""}">${v.txt}</td>`;}).join("")}</tr>`;
+ const sum=(y,k)=>y.reduce((a,r)=>a+r[k],0);
+ h+=line("Clientes de pago (cierre)",y=>({txt:`<b>${int(y[y.length-1].paying)}</b>`}));
+ h+=line("MRR (cierre)",y=>({txt:money(y[y.length-1].mrr)}));
+ h+=line("Ingresos del año",y=>({txt:money(sum(y,"mrr"))}));
+ h+=line("Costos del año",y=>({txt:money(sum(y,"totalCost"))}));
+ h+=line("Utilidad del año",y=>{const v=sum(y,"profit");return{txt:`<b>${money(v)}</b>`,v};},o=>o.v<0?"neg":"pos");
+ h+=line("Acumulado desde el mes 1",y=>{const v=y[y.length-1].cum;return{txt:money(v),v};},o=>o.v<0?"neg":"pos");
+ document.getElementById("yearTable").innerHTML=h+"</tbody>";}
+
+// ---- balance y liquidez (conectado al resultado de cada mes)
+function balRows(R){const b=S.bal,n=v=>+v||0;const out=[];
+ const row=(t,cum)=>{const paid=Math.min(n(b.loan),n(b.loanPay)*t),loan=n(b.loan)-paid,cash=n(b.cash)+cum-paid;
+  const ac=cash+n(b.ar)+n(b.oca),pc=n(b.ap)+n(b.oliab),assets=ac+n(b.fixedA),liab=pc+loan;
+  return{t,cash,ar:n(b.ar),oca:n(b.oca),fixedA:n(b.fixedA),ac,ap:n(b.ap),oliab:n(b.oliab),loan,pc,assets,liab,eq:assets-liab};};
+ out.push(row(0,0));R.rows.forEach(r=>out.push(row(r.t,r.cum)));return out;}
+function buildBalForm(){document.getElementById("bform").innerHTML=BF.map(([k,l,u])=>`<div class="field"><div class="frow"><label class="flab" for="bl-${k}">${l}</label>
+ <span class="fval">${u==="month"?`<input type="month" id="bl-${k}" data-b="${k}">`:`<input type="number" id="bl-${k}" data-b="${k}" min="0" step="50"><span class="unit">${u}</span>`}</span></div></div>`).join("");}
+function syncBal(){BF.forEach(([k])=>{const el=document.getElementById("bl-"+k);if(el&&document.activeElement!==el)el.value=S.bal[k];});}
+function renderBal(R){const B=balRows(R),H=S.horizon,b=S.bal,b0=B[0];
+ const empty=["cash","ar","oca","fixedA","ap","oliab","loan"].every(k=>!(+b[k]));
+ document.getElementById("balAlert").hidden=!empty;
+ document.getElementById("balAsOf").textContent="Balance de hoy = antes de "+fm(1);
+ const k=(l,v,s,hk,cls="")=>`<div class="k ${cls}"><span class="l">${l}${hk?help(hk):""}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+ const out=B.find(r=>r.t>0&&r.cash<0),low=B.reduce((a,r)=>r.cash<a.cash?r:a,B[0]);
+ const rc=b0.pc>0?(b0.ac/b0.pc).toFixed(2):"—";
+ document.getElementById("balStrip").innerHTML=
+  k("Efectivo hoy",kmoney(b0.cash),"en banco","", "")+
+  k("Liquidez hoy",kmoney(b0.ac-b0.pc),"capital de trabajo","liq")+
+  k("Razón corriente",rc,b0.pc>0?(+rc>=1?"cubre la deuda de corto plazo":"no alcanza a cubrirla"):"sin deudas de corto plazo","rc")+
+  k("Patrimonio hoy",kmoney(b0.eq),"activos − pasivos","eq")+
+  k("El efectivo alcanza",out?(out.t>1?"hasta "+fs(out.t-1):"No alcanza"):"todo el plan",out?(out.t>1?"se acaba en "+fm(out.t):"falta desde "+fm(1))+" · faltan "+kmoney(-low.cash):"más bajo: "+kmoney(low.cash)+" ("+(low.t?fm(low.t):"hoy")+")","run",out?"warnk":"main");
+ const cols=[0,12,24,36].filter(t=>t<=H);if(cols[cols.length-1]!==H)cols.push(H);
+ const head=`<thead><tr><th></th>${cols.map(t=>`<th>${t===0?"Hoy":fs(t)}</th>`).join("")}</tr></thead>`;
+ const line=(lab,key,cls)=>`<tr class="${cls||""}"><td>${lab}</td>${cols.map(t=>{const v=B[t][key];return `<td class="${key==="cash"||key==="eq"?(v<0?"neg":""):""}">${money(v)}</td>`;}).join("")}</tr>`;
+ const grp=l=>`<tr class="grp"><td colspan="${cols.length+1}">${l}</td></tr>`;
+ document.getElementById("balTable").innerHTML=head+"<tbody>"+grp("Activos")+line("Efectivo","cash")+line("Cuentas por cobrar","ar")+line("Otros activos corrientes","oca")+line("Equipo y activos fijos","fixedA")+line("Total activos","assets","tot")+
+  grp("Pasivos")+line("Cuentas por pagar","ap")+line("Otros pasivos corto plazo","oliab")+line("Préstamos","loan")+line("Total pasivos","liab","tot")+
+  line("Patrimonio","eq","tot")+"</tbody>";
+ if(typeof Chart!=="undefined"){const o=opts(v=>kmoney(v));
+  mk("chBal",{type:"line",data:{labels:B.map(r=>r.t===0?"Hoy":fs(r.t)),datasets:[
+   {label:"Efectivo",data:B.map(r=>r.cash),borderColor:css("--in"),backgroundColor:css("--in"),borderWidth:3,pointRadius:0,
+    segment:{borderColor:c=>c.p1.parsed.y<0?css("--bad"):css("--in")}},
+   {label:"Patrimonio",data:B.map(r=>r.eq),borderColor:css("--brand"),backgroundColor:css("--brand"),borderWidth:2,borderDash:[5,4],pointRadius:0}]},options:o});}
+ syncBal();}
+let lastRows=[];
+function update(fromRemote){save(fromRemote===true);
+ document.querySelectorAll("#scSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===S.sc));
+ document.querySelectorAll("#hzSeg button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.h===S.horizon));
+ const p=params(),R=runModel(p),H=S.horizon;lastRows=R.rows;
+ const k=(l,v,s,hk,cls="")=>`<div class="k ${cls}"><span class="l">${l}${hk?help(hk):""}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+ const cums=R.rows.map(r=>r.cum),lowV=Math.min(0,...cums),lowM=cums.indexOf(lowV)+1;
+ document.getElementById("strip").innerHTML=
+  k("Break-even",R.beMonth?fm(R.beMonth):"No llega",R.beMonth?"mes "+R.beMonth+" · "+int(R.rows[R.beMonth-1].paying)+" clientes de pago":"en "+H+" meses","be","main")+
+  k("Inversión necesaria",kmoney(-lowV),lowV<0?"pérdida acumulada más grande ("+fm(lowM)+")":"nunca perdemos dinero","cap")+
+  k("Clientes para break-even",isFinite(R.beUsers)?int(R.beUsers):"—","de pago","need")+
+  k("MRR "+fm(12),kmoney(R.mrr12),"ARR "+kmoney(R.mrr12*12),"mrr")+
+  k(`MRR ${fm(H)}`,kmoney(R.mrr36),int(R.paying36)+" clientes de pago","mrr");
+ renderLists(p);
+ const net=v=>v/(1+p.iva/100),fee=v=>net(v)*p.payPct/100+p.payFixed;
+ const keepM=net(p.priceMicro)-fee(p.priceMicro)-p.infraPaid-p.aiMicro-p.support,keepP=net(p.pricePro)-fee(p.pricePro)-p.infraPaid-p.aiPro-p.support;
+ document.getElementById("plans").innerHTML=freeCard(p.infraFree+p.aiFree)+planCard("Micro",p.priceMicro,keepM,p.churnMicro,R.cac,p.offerMicro,true)+planCard("Pro",p.pricePro,keepP,p.churnPro,R.cac,p.offerPro);
+ renderRoad(R);drawCharts(R);yearTable(R);renderBal(R);}
+
+buildInputs();buildBalForm();syncAll();renderListsFull();bindLists();
+document.getElementById("sgrid").addEventListener("input",e=>{const id=e.target.dataset.id;if(!id)return;const v=parseFloat(e.target.value);if(isNaN(v))return;S.p[id]=v;sync(id);update();});
+document.querySelectorAll("#scSeg button").forEach(b=>b.addEventListener("click",()=>{S.sc=b.dataset.sc;update();}));
+document.querySelectorAll("#hzSeg button").forEach(b=>b.addEventListener("click",()=>{S.horizon=+b.dataset.h;update();}));
+const COLS=[["Mes","t"],["Fecha","fecha"],["Registros","signups"],["Free","free"],["Pagan","paying"],["MRR","mrr",1],["Costos","totalCost",1],["Utilidad","profit",1],["Acumulado","cum",1]];
+function copyText(txt,toast,ok){const t=document.getElementById(toast);try{navigator.clipboard.writeText(txt).then(()=>t.textContent=ok,()=>t.textContent="Tu navegador no dejó copiar. Intenta desde Chrome.");}catch(e){t.textContent="Tu navegador no dejó copiar. Intenta desde Chrome.";}}
+document.getElementById("copyCsv").addEventListener("click",()=>copyText([COLS.map(c=>c[0]).join(",")].concat(lastRows.map(r=>COLS.map(c=>c[1]==="fecha"?fm(r.t):c[1]==="cash"?Math.round(r.cash):c[2]?r[c[1]].toFixed(2):Math.round(r[c[1]])).join(","))).join("\n"),"csvToast","Copiado. Pégalo en Excel o Google Sheets."));
+document.getElementById("saveBtn").addEventListener("click",doWrite);
+document.getElementById("saveBtn2").addEventListener("click",doWrite);
+document.getElementById("bform").addEventListener("input",e=>{const k=e.target.dataset.b;if(!k)return;if(k==="start"){if(/^\d{4}-\d{2}$/.test(e.target.value))S.bal.start=e.target.value;else return;}else S.bal[k]=Math.max(0,parseFloat(e.target.value)||0);update();});
+document.getElementById("discardBtn").addEventListener("click",()=>{if(lastRemote)applyRemote(lastRemote);});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",update);}catch(e){}
+new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+update(true);connectShared();
+
+
+}
+</script>

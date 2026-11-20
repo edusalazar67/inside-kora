@@ -557,6 +557,8 @@ select.inline:disabled{cursor:default;opacity:.7}
 :root[data-theme="dark"]{--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23AAB6AE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 .team-row select.inline{flex:0 0 auto;width:auto;min-width:150px;max-width:190px}
 .team-row select.who{min-width:130px;max-width:170px}
+.delacct{flex:none;width:96px;justify-content:center}.delacct.sure{background:#C8553D;color:#fff;border-color:#C8553D}.delacct-sp{flex:none;width:96px}
+@media (max-width:640px){.delacct-sp{display:none}}
 @media (max-width:640px){.team-row{flex-wrap:wrap}.team-row select.inline{flex:1 1 140px}}
 
 #fin .savehist{background:none;border:0;border-radius:0;margin-top:4px}
@@ -934,6 +936,7 @@ document.addEventListener("click",e=>{
   if(act==="login")openLogin();
   if(act==="signup")openAuth("up");
   if(act==="finlock")lockFin();
+  if(act==="delacct")delAcct(a);
   if(act==="open")openDrawer(a.dataset.id);
   if(act==="new")openModal(null,a.dataset.area);
   if(act==="filter"){filter=a.dataset.f;route()}
@@ -1202,8 +1205,15 @@ function viewAccounts(){
   <div class="team-list">${staffCache.map(x=>`<div class="team-row">${av({name:x.name||x.email,color:x.role==="pending"?"#C9C9BF":"#5DBE4C"})}
     <div class="tm"><div class="nm">${esc(x.name||"Sin nombre")}${x.user_id===acct.user_id?' <span class="hint">(tú)</span>':""}</div><div class="rl">${esc(x.email)}</div></div>
     <select class="inline who" data-acctm="${esc(x.user_id)}" title="Quién es">${x.member&&!S.users.some(u=>u.id===x.member)?`<option value="${esc(x.member)}" selected>${esc(x.name||"Otra persona")} · ${esc(AREA_LBL(x.area)||"otra")}</option>`:""}<option value="" ${x.member?"":"selected"}>¿Quién es?</option>${S.users.map(u=>`<option value="${esc(u.id)}" ${x.member===u.id?"selected":""} ${staffCache.some(y=>y.member===u.id&&y.user_id!==x.user_id)?"disabled":""}>${esc(u.name)}</option>`).join("")}</select>
-    <select class="inline" data-acct="${esc(x.user_id)}" ${x.user_id===acct.user_id?"disabled":""}>${opts.map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select></div>`).join("")||'<div class="empty">Todavía nadie ha creado cuenta.</div>'}</div>`;
+    <select class="inline" data-acct="${esc(x.user_id)}" ${x.user_id===acct.user_id?"disabled":""}>${opts.map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select>
+    ${x.user_id===acct.user_id?'<span class="delacct-sp"></span>':`<button type="button" class="btn ghost sm danger delacct" data-act="delacct" data-id="${esc(x.user_id)}" title="Borrar cuenta" aria-label="Borrar cuenta de ${esc(x.name||x.email)}">Borrar</button>`}</div>`).join("")||'<div class="empty">Todavía nadie ha creado cuenta.</div>'}</div>`;
 }
+async function delAcct(b){if(!acctAdmin())return;
+  if(!b.dataset.sure){b.dataset.sure="1";b.textContent="¿Seguro?";b.classList.add("sure");clearTimeout(b._t);b._t=setTimeout(()=>{delete b.dataset.sure;b.textContent="Borrar";b.classList.remove("sure")},4000);return}
+  b.disabled=true;b.textContent="Borrando…";
+  const r=await AUTH.rpc("delete_account",{uid:b.dataset.id});
+  if(r.error||r.data!=="ok"){toast(r.data==="self"?"No puedes borrar tu propia cuenta":r.error&&/delete_account/.test(r.error.message||"")?"Falta correr el SQL de borrar cuentas":"No se pudo borrar");b.disabled=false;b.textContent="Borrar";delete b.dataset.sure;return}
+  toast("Cuenta borrada");await loadStaff();await loadTeam();route()}
 document.addEventListener("change",async e=>{const ms=e.target.closest("[data-acctm]");if(!ms||!acctAdmin())return;
   const u=S.users.find(x=>x.id===ms.value);const upd={member:ms.value||null};if(u){upd.area=u.area;upd.name=u.name}
   const r=await AUTH.from("staff").update(upd).eq("user_id",ms.dataset.acctm);

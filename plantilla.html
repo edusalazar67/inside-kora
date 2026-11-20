@@ -838,6 +838,7 @@ document.addEventListener("click",e=>{
   if(act==="mbtn"){acct?signOut():openLogin()}
   if(act==="login")openLogin();
   if(act==="signup")openAuth("up");
+  if(act==="finlock")lockFin();
   if(act==="open")openDrawer(a.dataset.id);
   if(act==="new")openModal(null,a.dataset.area);
   if(act==="filter"){filter=a.dataset.f;route()}
@@ -938,6 +939,20 @@ function viewFinGate(){
   <div><div class="eyebrow">Acceso con cuenta</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
   <p style="color:var(--ink-2);margin:6px 0 0">${pend?"Tu cuenta ya existe. Falta que Eduardo la apruebe para que veas Finanzas.":"Solo para co-founders y el finance team. Entra con tu correo y tu contraseña."}</p></div>
   ${pend?"":'<button class="btn" data-act="login" style="justify-content:center">Entrar</button><p class="hint">¿Primera vez? Toca Entrar y luego «Crear cuenta».</p>'}</div></div>`}
+let finUnlocked=null;
+function viewFinPass(){return `<div class="lockwrap"><form class="lockbox" id="fpF" autocomplete="off">
+  <div class="lockic">${ICON.lock}</div>
+  <div><div class="eyebrow">Candado de Finanzas</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
+  <p style="color:var(--ink-2);margin:6px 0 0">Además de tu cuenta, Finanzas pide su propio usuario y contraseña.</p></div>
+  <label>Usuario<input id="fpU" autocomplete="off" required></label>
+  <label>Contraseña<input id="fpP" type="password" autocomplete="off" required></label>
+  <div class="lockerr" id="fpErr" role="alert"></div>
+  <button class="btn" type="submit" style="justify-content:center">Abrir Finanzas</button></form></div>`}
+function bindFinPass(){$("#fpU").focus();$("#fpF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;$("#fpErr").textContent="";
+  const r=await AUTH.rpc("unlock_finance",{u:$("#fpU").value.trim(),p:$("#fpP").value});b.disabled=false;
+  if(r.error){$("#fpErr").textContent="No se pudo revisar. Detalle: "+(r.error.message||"");return}
+  if(r.data===true){finUnlocked=true;toast("Finanzas abierta");route()}else{$("#fpErr").textContent="Usuario o contraseña de Finanzas incorrectos.";$("#fpP").value="";$("#fpP").focus()}}}
+async function lockFin(){try{await AUTH.rpc("lock_finance")}catch(e){}location.hash="pulso";location.reload()}
 function viewAccounts(){
   const opts=[["pending","Sin acceso"],["cofounder","Co-founder"],["finance","Finance team"],["admin","Admin"]];
   const pend=staffCache.filter(x=>x.role==="pending");
@@ -968,7 +983,7 @@ function viewLock(){return `<div class="lockwrap"><form class="lockbox" id="finF
   <button class="btn" type="submit">Entrar a finanzas</button></form></div>`}
 function bindLock(){const f=$("#finForm");$("#finP").focus();f.addEventListener("submit",async e=>{e.preventDefault();
   const m=await signIn(CFG.financeEmail||"fin",$("#finP").value);if(m){$("#finErr").textContent=m;$("#finP").value="";$("#finP").focus()}})}
-function finHead(){return `<div class="finbar"><span class="eyebrow">${ICON.lock} Finanzas · ${esc(ROLE_LBL[acct.role])}${finEdit()?" · puedes editar":" · solo lectura"}</span></div>`}
+function finHead(){return `<div class="finbar"><span class="eyebrow">${ICON.lock} Finanzas · ${esc(ROLE_LBL[acct.role])}${finEdit()?" · puedes editar":" · solo lectura"}</span><button class="btn ghost sm" data-act="finlock">Cerrar Finanzas</button></div>`}
 let finStarted=false;
 function startFin(){if(finStarted)return;finStarted=true;try{initFin()}catch(e){console.error(e)}}
 const snapObj=d=>({exists:!!d,data:()=>d,metadata:{}});
@@ -991,7 +1006,10 @@ function route(){
   const v=$("#view");
   if(h==="finanzas"){
     if(!AUTH){$("#fin").hidden=true;v.innerHTML=viewFinLink();return}
-    if(finView()){v.innerHTML=finHead();$("#fin").hidden=false;startFin();}else{$("#fin").hidden=true;v.innerHTML=viewFinGate();}
+    if(!finView()){$("#fin").hidden=true;v.innerHTML=viewFinGate();return}
+    if(finUnlocked===null){$("#fin").hidden=true;v.innerHTML='<div class="empty">Revisando acceso…</div>';
+      AUTH.rpc("finance_open").then(r=>{finUnlocked=!!r.data;if(location.hash.slice(1)==="finanzas")route()});return}
+    if(finUnlocked){v.innerHTML=finHead();$("#fin").hidden=false;startFin();}else{$("#fin").hidden=true;v.innerHTML=viewFinPass();bindFinPass();}
     return; }
   if(h==="cuentas"&&acctAdmin()){$("#fin").hidden=true;v.innerHTML=viewAccounts();return}
   $("#fin").hidden=true;

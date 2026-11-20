@@ -179,6 +179,8 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .meet-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media (max-width:900px){.meet-grid{grid-template-columns:1fr}}
 .mt-form{margin-bottom:16px}
+.meet>.page-head{align-items:center;margin-bottom:20px}
+.meet .section-title{align-items:center}
 .mt-tag{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);text-decoration:none;vertical-align:2px;margin-left:4px}
 .mt-tag:hover{color:var(--ink)}
 .nav a.mt-nav .n{width:auto;min-width:38px;font-size:10.5px;text-transform:uppercase}
@@ -920,7 +922,7 @@ const ICON={
 function renderShell(){
   const h=location.hash.slice(1)||"pulso";
   $("#nav").innerHTML=
-    `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA</a>
+    `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA<span class="count num">${overallPct()}%</span></a>
      <a href="#team" class="${h==="team"?"on":""}">${ICON.team}Team</a>
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
      ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
@@ -1111,11 +1113,11 @@ function gcalUrl(m){const a=new Date(m.at),b=new Date(a.getTime()+(m.mins||60)*6
   return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("KORA · "+m.title)+"&dates="+gcalDate(a)+"/"+gcalDate(b)+"&details="+encodeURIComponent((m.link?"Google Meet: "+m.link+"\n\n":"")+(m.topics?"Temas: "+m.topics:""))+(m.link?"&location="+encodeURIComponent(m.link):"")}
 const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"";
 const toLocalInput=iso=>{if(!iso)return["",""];const d=new Date(iso),p=n=>String(n).padStart(2,"0");return[`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`,`${p(d.getHours())}:${p(d.getMinutes())}`]};
-function meetForm(m){const [dd,tt]=toLocalInput(m&&m.at);return `<form class="panel gp-form mt-form" id="mtF" data-id="${m?esc(m.id):""}">
-  <h3 style="margin:0">${m?"Editar meeting":"Agendar meeting"}</h3>
+function meetForm(m,isPast){const [dd,tt]=toLocalInput(m?m.at:isPast?new Date().toISOString():null);return `<form class="panel gp-form mt-form" id="mtF" data-id="${m?esc(m.id):""}">
+  <h3 style="margin:0">${m?"Editar meeting":isPast?"Registrar meeting pasada":"Agendar meeting"}</h3>
   <label class="field">Título<input id="mtT" maxlength="80" required value="${m?esc(m.title):""}" placeholder="Ej. Revisión semanal"></label>
   <label class="field">De qué es<select id="mtS">${scopeOpts().map(([k,l])=>`<option value="${esc(k)}" ${((m&&m.scope)||"general")===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
-  <div class="gp-row"><label class="field">Fecha<input id="mtD" type="date" required value="${dd}"></label><label class="field">Hora<input id="mtH" type="time" required value="${tt||"10:00"}"></label>
+  <div class="gp-row"><label class="field">Fecha<input id="mtD" type="date" required value="${dd}" ${isPast?`max="${toLocalInput(new Date().toISOString())[0]}"`:""}></label><label class="field">Hora<input id="mtH" type="time" required value="${tt||"10:00"}"></label>
     <label class="field">Duración<select id="mtM">${[30,45,60,90].map(n=>`<option value="${n}" ${((m&&m.mins)||60)===n?"selected":""}>${n} min</option>`).join("")}</select></label></div>
   <label class="field">Link de Google Meet<div class="addrow"><input id="mtL" type="url" placeholder="https://meet.google.com/…" value="${m?esc(m.link||""):""}"><a class="btn ghost sm" href="https://meet.new" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">Crear link de Meet ↗</a></div></label>
   <p class="hint" style="margin:-6px 0 0">«Crear link de Meet» abre una reunión nueva en Google Meet. Copia el link de la barra del navegador y pégalo aquí.</p>
@@ -1142,14 +1144,14 @@ function meetingsSection(){
         <div class="mt-acts">${safeUrl(m.link)?`<a class="btn sm" href="${esc(safeUrl(m.link))}" target="_blank" rel="noopener" style="text-decoration:none">Unirse a Meet ↗</a>`:'<span class="hint">Sin link de Meet</span>'}
           <a class="btn ghost sm" href="${esc(gcalUrl(m))}" target="_blank" rel="noopener" style="text-decoration:none">Agregar a Calendar ↗</a>
           ${ed?`<button class="btn ghost sm" data-mted="${esc(m.id)}">${ICON.edit}Editar</button>`:""}</div></div></li>`).join("")}</ul>`:'<div class="empty">No hay reuniones agendadas.</div>'}</div>
-    <div class="panel"><div class="section-title"><h2>Bitácora</h2><span class="eyebrow">${past.length} pasada${past.length===1?"":"s"}</span></div>
+    <div class="panel"><div class="section-title"><h2>Bitácora</h2>${ed?'<button class="btn ghost sm" id="mtPast">+ Registrar meeting pasada</button>':`<span class="eyebrow">${past.length} pasada${past.length===1?"":"s"}</span>`}</div>
       ${past.length?`<ul class="mt-list">${past.map(m=>`<li><details class="mt-log"><summary><span class="mt-t">${esc(m.title)} ${scopeTag(m.scope)}</span><span class="hint">${esc(fmtMeet(m.at))}</span></summary>
         ${lines(m.topics).length?`<div class="mt-h">Temas</div><ul class="mt-topics">${lines(m.topics).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
         <div class="mt-h">Notas y acuerdos</div>${m.notes?`<div class="mt-notes">${esc(m.notes)}</div>`:'<div class="hint">Todavía sin notas.</div>'}
         ${ed?`<div class="mt-acts"><button class="btn ghost sm" data-mted="${esc(m.id)}">${ICON.edit}${m.notes?"Editar":"Agregar notas"}</button></div>`:""}</details></li>`).join("")}</ul>`:'<div class="empty">Aquí quedan las reuniones pasadas con sus notas.</div>'}</div>
   </div></section>`}
 function bindMeetings(openNew){if(!canMeet())return;
-  const open=m=>{mtEditing=true;$("#mtSlot").innerHTML=meetForm(m);$("#mtT").focus();$("#mtF").scrollIntoView({block:"nearest",behavior:"smooth"});
+  const open=(m,isPast)=>{mtEditing=true;$("#mtSlot").innerHTML=meetForm(m,isPast);$("#mtT").focus();$("#mtF").scrollIntoView({block:"nearest",behavior:"smooth"});
     $("#mtX").onclick=()=>{mtEditing=false;$("#mtSlot").innerHTML="";if(location.hash==="#meetings/nuevo")history.replaceState(null,"","#meetings")};
     if(m)$("#mtDel").onclick=async()=>{const b=$("#mtDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
       const r=await AUTH.from("meetings").delete().eq("id",m.id);if(r.error){toast("No se pudo borrar");return}MEET=MEET.filter(x=>x.id!==m.id);mtEditing=false;toast("Meeting borrada");route()};
@@ -1160,6 +1162,7 @@ function bindMeetings(openNew){if(!canMeet())return;
       const act=!m?(past?`anotó la reunión «${x.title}» en`:`agendó la reunión «${x.title}» (${fmtMeet(at)}) en`):(x.notes&&!m.notes?`agregó las notas de «${x.title}» en`:`actualizó la reunión «${x.title}» en`);
       if(await saveMeet(x,act)){MEET=MEET.filter(y=>y.id!==x.id).concat([x]);mtEditing=false;toast("Meeting guardada");if(location.hash==="#meetings/nuevo")history.replaceState(null,"","#meetings");route()}else b.disabled=false}};
   const nb=$("#mtNew");if(nb)nb.onclick=()=>open(null);
+  const pb=$("#mtPast");if(pb)pb.onclick=()=>open(null,true);
   if(openNew)open(null);
   $("#view").querySelectorAll("[data-mted]").forEach(b=>b.onclick=e=>{e.preventDefault();open(MEET.find(m=>m.id===b.dataset.mted))});
 }

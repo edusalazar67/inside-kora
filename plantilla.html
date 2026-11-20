@@ -756,7 +756,7 @@ function seed(){
        ms:[["Prompt de la iniciativa",1],["Mockup interactivo",1],["Unir el modelo financiero (Finanzas)",1],["Presentar a Victor y Luma",1],["Versión real en la web",0]],
        links:[],log:[["eduardo","Al equipo le gustó. Pasamos a la versión real en la web.",d("2026-11-20T04:30:00Z")]]},
       {id:"p4",owner:"diego",area:"research",title:"Precios El Salvador",status:"done",due:"",example:false,
-       desc:"Precios base para El Salvador: Micro $5.55 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).",
+       desc:"Precios base para El Salvador: Micro $5.99 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).",
        ms:[["Market deck de El Salvador",1],["Deck de monetización",1],["Precios Micro y Pro",1],["Oferta del primer mes",1]],links:[],log:[]}
     ],
     feed:[{who:"eduardo",text:"publicó una actualización en",pid:"p3",at:d("2026-11-20T04:30:00Z")},{who:"diego",text:"completó",pid:"p4",at:d("2026-11-16T18:00:00Z")}]
@@ -1187,6 +1187,7 @@ async function loadGen(){if(!AUTH||!acct)return;
       for(const p of seed){const {id,...d}=p;await AUTH.from("gen_projects").insert({id,data:{...d,ms:d.ms.map(m=>[m[0],m[1],m[2]||""]),_act:""}})}
       await AUTH.from("gen_projects").upsert({id:"_meta",data:{seeded:[...new Set([...done,...STATIC.projects.map(p=>p.id)])],_act:""}});
       g=await fetchGen();}
+    for(const p of g){if(typeof p.desc==="string"&&p.desc.includes("Micro $5.55")){p.desc=p.desc.replace("Micro $5.55","Micro $5.99");saveGen(p,"actualizó el precio Micro de El Salvador a $5.99 en")}}
     for(const p of g){if(p.goal===undefined){const st=STATIC.projects.find(x=>x.id===p.id);if(st&&st.goal){p.goal=st.goal;saveGen(p,"")}}}
     GEN=g;setProjects(STATIC.projects);
     AUTH.channel("gen").on("postgres_changes",{event:"*",schema:"public",table:"gen_projects"},async()=>{
@@ -1665,7 +1666,7 @@ const G=[
  {g:"Costo por usuario",f:[["aiMicro","IA · Micro","$/mes",0,5,0.01,"sup"],["aiPro","IA · Pro","$/mes",0,8,0.01,"sup"],["aiFree","IA · Free","$/mes",0,3,0.01,"sup"],["infraPaid","Nube · pago","$/mes",0,3,0.01,"sup"],["infraFree","Nube · Free","$/mes",0,3,0.01,"sup"],["support","Soporte · pago","$/mes",0,3,0.01,"sup"],["payPct","Comisión cobro","%",0,10,0.1,"sup"],["payFixed","Comisión fija","$",0,1,0.05,"sup"]]}
 ];
 const TAG={kora:"Dato KORA",sup:"Supuesto",def:"Por definir"};
-const D0={priceMicro:5.55,pricePro:14.99,offerMicro:1,offerPro:5,offerMonths:1,iva:0,startFree:30,signups0:40,growth:7,convNew:8,convFree:2,mixPro:25,offerTake:70,upgrade:1,
+const D0={priceMicro:5.99,pricePro:14.99,offerMicro:1,offerPro:5,offerMonths:1,iva:0,startFree:30,signups0:40,growth:7,convNew:8,convFree:2,mixPro:25,offerTake:70,upgrade:1,
  churnMicro:6,churnPro:4,churnFree:8,churnOfferEnd:30,payrollLoad:16.25,mktPaid:300,cpl:4,
  aiMicro:0.3,aiPro:0.8,aiFree:0.05,infraPaid:0.3,infraFree:0.1,support:0.2,payPct:3.5,payFixed:0.3};
 const SCEN={cons:{growth:0.7,conv:0.75,churn:1.25},base:{growth:1,conv:1,churn:1},opt:{growth:1.3,conv:1.25,churn:0.8}};
@@ -1701,8 +1702,9 @@ async function doWrite(){if(writing||!DB||!canWrite)return;writing=true;const bo
  catch(e){const c=e&&e.code;if(c==="permission_denied"||c==="not_granted"||c==="unauthenticated"){canWrite=false;setStatus("warn","● Solo puedes ver. No tienes permiso para guardar cambios.");}else setStatus("warn","● No se pudo guardar. Intenta de nuevo.");}
  writing=false;refreshSave();}
 function applyRemote(d){if(!d||!d.p)return;
- S.p={...D0,...d.p};S.bal={...B0,...(d.bal||{})};if(Array.isArray(d.team))S.team=perPerson(d.team);if(Array.isArray(d.costs))S.costs=d.costs;lastShared=shared();remoteMeta={by:d.by,byName:d.byName,at:d.at,hist:d.hist};
- syncAll();renderListsFull();update(true);showSaved();}
+ S.p={...D0,...d.p};S.bal={...B0,...(d.bal||{})};if(Array.isArray(d.team))S.team=perPerson(d.team);if(Array.isArray(d.costs))S.costs=d.costs;lastShared=shared();
+ let mig=false;if(S.p.priceMicro===5.55){S.p.priceMicro=5.99;mig=true;} /* precio Micro de El Salvador cambió a $5.99 (20 nov): queda como cambio sin guardar */remoteMeta={by:d.by,byName:d.byName,at:d.at,hist:d.hist};
+ syncAll();renderListsFull();update(true);showSaved().then(()=>{if(mig)refreshSave()});}
 async function connectShared(){
  setStatus("busy","● Conectando…");
  let db=null;try{db=await window.KORA_FIN.db();}catch(e){}canWrite=window.KORA_FIN.canWrite();

@@ -107,7 +107,7 @@ button{cursor:pointer}
 .rail{background:var(--rail);color:var(--rail-ink);padding:24px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
 .rail .brand{padding:0 10px}
 .rail .brand small{display:block;color:var(--rail-ink-2);font-size:11.5px;letter-spacing:.06em;margin-top:6px}
-.nav{display:grid;gap:2px}
+.nav{display:grid;gap:2px;grid-template-columns:minmax(0,1fr)}
 .nav .label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rail-ink-2);padding:14px 10px 6px}
 .nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--rail-ink-2);text-decoration:none;font-weight:500}
 .nav a:hover{color:var(--rail-ink);background:rgba(255,255,255,.05)}
@@ -159,6 +159,23 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 @media (max-width:560px){.quote{padding:22px 20px}}
 .live-dot::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:1px;animation:lp 1.6s ease-in-out infinite}
 @keyframes lp{50%{opacity:.3}}
+.nav .grp{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rail-ink-2);padding:14px 10px 6px}
+.nav .grp:hover{color:var(--rail-ink)}.nav .grp .chev{letter-spacing:0;font-size:11px}
+.nav a .ell{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav a.addp{color:var(--rail-ink-2);font-size:13px}
+.gp-form{display:grid;gap:14px;margin:0 0 20px}
+.gp-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.gp-row .field{flex:1;min-width:160px}
+.btn.danger{color:#E5806B;border-color:rgba(229,128,107,.4)}
+.gp-ms{list-style:none;margin:0;padding:0;display:grid}
+.gp-ms li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.gp-ms li:last-child{border-bottom:0}
+.gp-ms input[type=checkbox]{accent-color:var(--green);width:18px;height:18px;flex:none}
+.gp-ms .t{flex:1;min-width:0;font-size:14.5px}
+.gp-ms li.done .t{color:var(--ink-3);text-decoration:line-through}
+.gp-ms .who{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.gp-ms select.resp{flex:none;width:170px;padding-top:6px;padding-bottom:6px;font-size:13px}
+.gp-add{margin-top:14px}.gp-add select.resp{flex:none;width:170px}
+@media (max-width:560px){.gp-ms li{flex-wrap:wrap}.gp-ms .t{flex-basis:calc(100% - 70px)}.gp-ms select.resp{margin-left:30px;flex:1}.gp-add{flex-wrap:wrap}.addrow.gp-add input{flex:1 1 100%}.addrow.gp-add select.resp{flex:1}}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -856,13 +873,16 @@ function renderShell(){
   const h=location.hash.slice(1)||"pulso";
   $("#nav").innerHTML=
     `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA</a>
-     <a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Proyectos<span class="count num">${genProjects().length||""}</span></a>
      <a href="#team" class="${h==="team"?"on":""}">${ICON.team}Team</a>
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
      ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
      <div class="label">Áreas</div>`+
-    AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("");
+    AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("")+
+    `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
+    (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
+    genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
+    (canProj()?`<a href="#p/nuevo" class="addp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Nuevo proyecto</a>`:""));
   const u=me?user(me):null;
   $("#me").innerHTML=isAdmin()
     ?`<div class="row">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">Editor · puedes cambiar todo</div></div></div><button class="linkbtn" data-act="logout">Salir del modo editor</button>`
@@ -880,6 +900,7 @@ function renderShell(){
 document.addEventListener("click",e=>{
   const a=e.target.closest("[data-act]");if(!a)return;
   const act=a.dataset.act;
+  if(act==="pgtoggle"){projClosed=!projClosed;try{localStorage.setItem("ik-pclosed",projClosed?"1":"")}catch(_){}renderShell();return}
   if(act==="logout")signOut();
   if(act==="mbtn"){acct?signOut():openLogin()}
   if(act==="login")openLogin();
@@ -896,6 +917,13 @@ $("#mUser").onclick=()=>{if(!AUTH)return;acct?signOut():openLogin()};
 /* ---------- Vistas ---------- */
 function projCard(p,showOwner){
   const u=user(p.owner),v=pct(p);
+  if(p.area==="general")return `<a class="proj" href="#p/${esc(p.id)}" style="text-decoration:none;color:inherit">
+    <div class="top"><h4>${esc(p.title)}</h4>${chip(p.status)}</div>
+    <p>${esc(p.desc)}</p>
+    <div class="bottom">
+      <div class="info"><span>${p.due?"Fecha: "+esc(fmtDate(p.due))+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span><b class="num">${v}%</b></div>
+      <div class="track"><i style="width:${v}%"></i></div>
+    </div></a>`;
   return `<button class="proj" data-act="open" data-id="${esc(p.id)}">
     <div class="top"><h4>${esc(p.title)}</h4>${chip(p.status)}</div>
     <p>${esc(p.desc)}</p>
@@ -907,15 +935,15 @@ function projCard(p,showOwner){
 let LIVEFEED=[];
 function feedHTML(){
   const st=S.feed.map(f=>{const u=user(f.who);return{u,text:f.text,pid:f.pid,at:f.at}});
-  const lv=LIVEFEED.map(a=>({u:S.users.find(x=>(x.name||"").toLowerCase()===(a.who||"").toLowerCase())||{name:a.who||"Alguien",color:"#5DBE4C"},text:a.text,pid:a.pid,at:a.at}));
+  const lv=LIVEFEED.map(a=>({ptitle:a.ptitle,u:S.users.find(x=>(x.name||"").toLowerCase()===(a.who||"").toLowerCase())||{name:a.who||"Alguien",color:"#5DBE4C"},text:a.text,pid:a.pid,at:a.at}));
   const all=st.concat(lv).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,8);
   return all.map(f=>{const p=f.pid?S.projects.find(x=>x.id===f.pid):null;
-    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`:""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
+    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?(p.area==="general"?`<a href="#p/${esc(p.id)}">${esc(p.title)}</a>`:`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`):f.ptitle?esc(f.ptitle):""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
 function refreshFeed(){const n=document.getElementById("feedList");if(n)n.innerHTML=feedHTML()}
 setInterval(refreshFeed,30000);
 let actStarted=false;
 async function startActivity(){if(actStarted||!AUTH||!acct||acct.role==="pending")return;actStarted=true;
-  try{const r=await AUTH.from("activity").select("who,text,pid,at").order("at",{ascending:false}).limit(20);if(!r.error&&Array.isArray(r.data)){LIVEFEED=r.data;refreshFeed()}}catch(e){}
+  try{const r=await AUTH.from("activity").select("who,text,pid,ptitle,at").order("at",{ascending:false}).limit(20);if(!r.error&&Array.isArray(r.data)){LIVEFEED=r.data;refreshFeed()}}catch(e){}
   try{AUTH.channel("act").on("postgres_changes",{event:"INSERT",schema:"public",table:"activity"},m=>{LIVEFEED.unshift(m.new);refreshFeed();if(m.new&&m.new.text)toast((m.new.who||"Alguien")+" "+m.new.text)}).subscribe()}catch(e){}}
 /* Nuevas versiones del portal (proyectos que Claude actualiza): se revisan solas cada 2 minutos */
 let dataSig=JSON.stringify({p:STATIC.projects,f:STATIC.feed,u:STATIC.users});
@@ -923,7 +951,7 @@ async function checkNewData(){try{
   const t=await (await fetch(location.pathname,{cache:"no-store"})).text();
   const el=new DOMParser().parseFromString(t,"text/html").getElementById("kora-data");if(!el)return;
   const d=JSON.parse(el.textContent);const sig=JSON.stringify({p:d.projects,f:d.feed,u:d.users});if(sig===dataSig)return;
-  dataSig=sig;Object.assign(STATIC,d);S.projects=d.projects;S.feed=d.feed;S.users=d.users;
+  dataSig=sig;Object.assign(STATIC,d);S.feed=d.feed;S.users=d.users;setProjects(d.projects);
   if(location.hash.slice(1)!=="finanzas"&&!$("#modal").classList.contains("on")){route();if(openId)renderDrawer()}
   toast("Portal actualizado");}catch(e){}}
 setInterval(checkNewData,120000);
@@ -1000,15 +1028,98 @@ const LAUNCH=new Date("2026-12-18T00:00:00-06:00");
 const genProjects=()=>S.projects.filter(p=>p.area==="general");
 function cdParts(){const ms=Math.max(0,LAUNCH-Date.now());return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60,s:Math.floor(ms/1e3)%60,done:ms<=0}}
 function countdownPanel(){const c=cdParts();const g=genProjects().find(p=>/lanzamiento/i.test(p.title));
-  return `<a class="panel countdown" ${g?`data-act="open" data-id="${esc(g.id)}"`:'href="#proyectos"'}>
+  return `<a class="panel countdown" href="${g?"#p/"+esc(g.id):"#proyectos"}">
     <div class="cd-txt"><div class="eyebrow">Lanzamiento oficial</div><h2>${c.done?"¡KORA ya salió!":"Faltan para el lanzamiento"}</h2><p>18 de diciembre de 2026</p></div>
     <div class="cd-nums" id="cdNums">${cdHTML(c)}</div></a>`}
 function cdHTML(c){return [["d","días"],["h","horas"],["m","min"],["s","seg"]].map(([k,l])=>`<div class="cd-box"><b class="num">${String(c[k]).padStart(2,"0")}</b><span>${l}</span></div>`).join("")}
 setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHTML(cdParts())},1000);
+/* ---------- Proyectos generales (Supabase: gen_projects; todos los aprobados editan) ---------- */
+let projClosed=false;try{projClosed=!!localStorage.getItem("ik-pclosed")}catch(_){}
+let GEN=null, genReady=false, pEditing=false;
+const canProj=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&genReady);
+function setProjects(stat){const base=stat.filter(p=>p.area!=="general");const gen=GEN||stat.filter(p=>p.area==="general");S.projects=gen.concat(base)}
+const toGen=r=>Object.assign({},r.data,{id:r.id,area:"general"});
+async function fetchGen(){const r=await AUTH.from("gen_projects").select("id,data,updated_at").order("created_at",{ascending:true});if(r.error)throw r.error;return r.data.map(toGen)}
+async function loadGen(){if(!AUTH||!acct)return;
+  try{let g=await fetchGen();genReady=true;
+    if(!g.length){const seed=STATIC.projects.filter(p=>p.area==="general");
+      for(const p of seed){const {id,...d}=p;await AUTH.from("gen_projects").insert({id,data:{...d,ms:d.ms.map(m=>[m[0],m[1],m[2]||""]),_act:""}})}
+      g=await fetchGen();}
+    GEN=g;setProjects(STATIC.projects);
+    AUTH.channel("gen").on("postgres_changes",{event:"*",schema:"public",table:"gen_projects"},async()=>{
+      try{GEN=await fetchGen();setProjects(STATIC.projects);const h=location.hash.slice(1);
+        if(h==="finanzas")return;
+        if(pEditing&&h.startsWith("p/")){renderShell();return}
+        route()}catch(e){}}).subscribe();
+  }catch(e){console.warn("gen_projects",e);genReady=false;}}
+async function saveGen(p,act){
+  const {id,area,...d}=p;d._act=act||"";d._by=acct?(acct.name||acct.email):"";
+  const r=await AUTH.from("gen_projects").upsert({id,data:d,updated_at:new Date().toISOString()});
+  if(r.error){toast("No se pudo guardar: "+(r.error.message||""));try{GEN=await fetchGen();setProjects(STATIC.projects)}catch(_){}route();return false}
+  return true}
+const respSel=(val,attrs)=>`<select class="inline resp" ${attrs}><option value="">Sin responsable</option>${S.users.map(u=>`<option value="${esc(u.id)}" ${val===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`;
+function daysTo(d){if(!d)return null;return Math.ceil((new Date(d+"T00:00:00-06:00")-Date.now())/864e5)}
+function viewGenProject(id){
+  const p=genProjects().find(x=>x.id===id),ed=canProj(),v=pct(p),dl=daysTo(p.due);
+  const people=[...new Set(p.ms.map(m=>m[2]).filter(Boolean))];
+  return `
+  <div class="area-hero">
+    <div><span class="n">Proyecto general · toda la empresa</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${chip(p.status)}
+        <span style="color:var(--olive-ink-2);font-size:13.5px">${p.due?`Fecha: ${esc(fmtDate(p.due))}${dl!==null&&dl>=0&&p.status!=="done"?` · faltan ${dl} día${dl===1?"":"s"}`:""}`:"Sin fecha"} · ${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span>
+        <span class="stack">${people.map(id=>av(user(id),"sm")).join("")}</span></div></div>
+    <div class="ring" style="--p:${v};--size:120px"><div><div><b class="num">${v}%</b><br><span>AVANCE</span></div></div></div>
+  </div>
+  ${ed?`<div class="page-head" style="margin-top:16px"><span class="hint">Cualquiera del equipo puede editar este proyecto.</span>
+    <div style="display:flex;gap:8px"><button class="btn ghost sm" id="gpEdit">${ICON.edit}Editar proyecto</button></div></div>
+  <form class="panel gp-form" id="gpForm" hidden>
+    <label class="field">Nombre<input id="gpT" maxlength="80" required value="${esc(p.title)}"></label>
+    <label class="field">Descripción<textarea id="gpD" maxlength="400">${esc(p.desc||"")}</textarea></label>
+    <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
+    <label class="field">Estado<select id="gpS">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+    <div class="gp-row" style="justify-content:space-between"><button type="button" class="btn ghost sm danger" id="gpDel">Borrar proyecto</button>
+    <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
+  </form>`:`<div style="height:16px"></div>`}
+  <section class="panel">
+    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">Responsable por hito</span></div>
+    <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}">
+      <input type="checkbox" data-gms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"} aria-label="Completado">
+      <span class="t">${esc(m[0])}</span>
+      ${ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
+      ${ed?`<button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
+    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${respSel("",'id="gpMsR"')}<button class="btn sm" type="submit">Agregar</button></form>`:""}
+  </section>`}
+function bindGenProject(id){if(!canProj())return;
+  const get=()=>genProjects().find(x=>x.id===id);
+  const commit=async(act)=>{const p=get();if(p.ms.length&&p.ms.every(m=>m[1])&&p.status!=="done"){p.status="done"}else if(p.status==="done"&&p.ms.some(m=>!m[1]))p.status="doing";else if(p.status==="todo"&&p.ms.some(m=>m[1]))p.status="doing";
+    route();await saveGen(p,act)};
+  $("#view").querySelectorAll("[data-gms]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gms];m[1]=c.checked?1:0;commit(c.checked?`completó «${m[0]}» en`:`reabrió «${m[0]}» en`)});
+  $("#view").querySelectorAll("[data-gresp]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gresp];m[2]=c.value;commit(c.value?`asignó «${m[0]}» a ${user(c.value).name} en`:`quitó el responsable de «${m[0]}» en`)});
+  $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el hito «${m[0]}» de`)});
+  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR").value]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
+  const f=$("#gpForm");
+  $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
+  $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
+  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;pEditing=false;route();saveGen(p,"editó")};
+  $("#gpDel").onclick=async()=>{const b=$("#gpDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
+    const r=await AUTH.from("gen_projects").delete().eq("id",id);if(r.error){toast("No se pudo borrar");return}
+    GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash="proyectos"};
+}
+function viewNewProject(){return `<div class="page-head"><div><div class="eyebrow">Proyectos</div><h1>Nuevo proyecto</h1><p>Un proyecto de toda la empresa. Después le agregas hitos con su responsable.</p></div></div>
+  <form class="panel gp-form" id="npF">
+    <label class="field">Nombre<input id="npT" maxlength="80" required placeholder="Ej. Lanzamiento en Costa Rica"></label>
+    <label class="field">Descripción<textarea id="npD" maxlength="400" placeholder="¿De qué se trata?"></textarea></label>
+    <div class="gp-row"><label class="field">Fecha<input id="npDue" type="date"></label></div>
+    <div class="gp-row" style="justify-content:flex-end"><a class="btn ghost sm" href="#proyectos" style="text-decoration:none">Cancelar</a><button class="btn sm" type="submit">Crear proyecto</button></div>
+  </form>`}
+function bindNewProject(){$("#npT").focus();$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
+  const p={id:"g"+Date.now().toString(36),area:"general",owner:"",title:$("#npT").value.trim(),desc:$("#npD").value.trim(),due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[]};
+  GEN=(GEN||[]).concat([p]);setProjects(STATIC.projects);
+  if(await saveGen(p,"creó el proyecto"))location.hash="p/"+p.id;else b.disabled=false}}
 function viewProjects(){const ps=genProjects();const vis=p=>filter==="all"||p.status===filter;const shown=ps.filter(vis);
   return `<div class="page-head"><div><div class="eyebrow">Toda la empresa</div><h1>Proyectos</h1>
     <p>Los proyectos grandes de KORA, en los que trabajan todas las áreas.</p></div>
-    ${isAdmin()?'<button class="btn" data-act="new" data-area="general">+ Nuevo proyecto</button>':""}</div>
+    ${canProj()?'<a class="btn" href="#p/nuevo" style="text-decoration:none">+ Nuevo proyecto</a>':""}</div>
   ${countdownPanel()}
   <div class="page-head">${filterBar()}</div>
   ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,true)).join("")}</div>`:`<div class="empty">${ps.length?"Ningún proyecto con este estado.":"Todavía no hay proyectos generales."}</div>`}`}
@@ -1016,10 +1127,10 @@ function viewPeople(){
   const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
   return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Team</h1>
     <p>Quién está en KORA y en qué está trabajando ahora.</p></div></div>
-  <div class="people">${S.users.map(u=>{const mine=S.projects.filter(p=>p.owner===u.id);const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
+  <div class="people">${S.users.map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p.area==="general"&&p.ms.some(m=>m[2]===u.id&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
     return `<section class="panel person-card"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role.includes(areaName(u.area))?u.role:u.role+" · "+areaName(u.area))}</div></div>
       <span class="sum num">${now.length} en marcha${done?` · ${done} listo${done===1?"":"s"}`:""}</span></div>
-      ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button data-act="open" data-id="${esc(p.id)}"><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
+      ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button ${p.area==="general"?`onclick="location.hash='p/${esc(p.id)}'"`:`data-act="open" data-id="${esc(p.id)}"`}><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
         :'<div class="empty">Sin proyectos en marcha.</div>'}</section>`}).join("")}</div>`}
 function viewTeam(){
   const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
@@ -1115,6 +1226,8 @@ function route(){
   $("#fin").hidden=true;
   if(AREAS[h])v.innerHTML=viewArea(h);
   else if(h==="proyectos")v.innerHTML=viewProjects();
+  else if(h==="p/nuevo"&&canProj()){v.innerHTML=viewNewProject();bindNewProject()}
+  else if(h.startsWith("p/")&&genProjects().some(p=>p.id===h.slice(2))){v.innerHTML=viewGenProject(h.slice(2));bindGenProject(h.slice(2))}
   else if(h==="team")v.innerHTML=viewPeople();
   else if(h==="equipo"&&isAdmin())v.innerHTML=viewTeam();
   else v.innerHTML=viewPulso();
@@ -1254,6 +1367,7 @@ async function boot(){
   if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
+  await loadGen();
   route();live();startActivity();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

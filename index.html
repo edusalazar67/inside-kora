@@ -1201,7 +1201,7 @@ async function saveGen(p,act){
 const respSel=(val,attrs)=>`<select class="inline resp" ${attrs}><option value="">Sin responsable</option>${teamUsers().concat(val&&!teamUsers().some(u=>u.id===val)?[user(val)]:[]).map(u=>`<option value="${esc(u.id)}" ${val===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`;
 function daysTo(d){if(!d)return null;return Math.ceil((new Date(d+"T00:00:00-06:00")-Date.now())/864e5)}
 function viewGenProject(id){
-  const p=dbProj(id),ed=canProj(),v=pct(p),dl=daysTo(p.due);
+  const p=dbProj(id),ed=canProj(),perHito=p.area==="general",v=pct(p),dl=daysTo(p.due);
   const people=[...new Set(p.ms.map(m=>m[2]).filter(Boolean))];
   return `
   <div class="area-hero">
@@ -1217,19 +1217,19 @@ function viewGenProject(id){
     <label class="field">Nombre<input id="gpT" maxlength="80" required value="${esc(p.title)}"></label>
     <label class="field">Descripción<textarea id="gpD" maxlength="400">${esc(p.desc||"")}</textarea></label>
     <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
-    <label class="field">Responsable<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+    <label class="field" ${perHito?"":"hidden"}>Responsable<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
     <label class="field">Estado<select id="gpS">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
     <div class="gp-row" style="justify-content:space-between"><button type="button" class="btn ghost sm danger" id="gpDel">Borrar proyecto</button>
     <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
   </form>`:`<div style="height:16px"></div>`}
   <section class="panel">
-    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">Responsable por hito</span></div>
+    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">${perHito?"Responsable por hito":p.owner?"Responsable: "+esc(user(p.owner).name):""}</span></div>
     <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}">
       <input type="checkbox" data-gms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"} aria-label="Completado">
       <span class="t">${esc(m[0])}</span>
-      ${ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
+      ${!perHito?"":ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
       ${ed?`<button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
-    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${respSel("",'id="gpMsR"')}<button class="btn sm" type="submit">Agregar</button></form>`:""}
+    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${perHito?respSel("",'id="gpMsR"'):""}<button class="btn sm" type="submit">Agregar</button></form>`:""}
   </section>
   ${(p.links||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Entregables y links</h2></div><div class="links">${p.links.map(l=>{const u=safeUrl(l[1])||(String(l[1]||"").startsWith("#")?l[1]:"");return u?`<a href="${esc(u)}" ${u.startsWith("#")?"":'target="_blank" rel="noopener"'}>${esc(l[0])} ↗</a>`:`<span>${esc(l[0])}</span>`}).join("")}</div></section>`:""}
   ${(p.log||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Actualizaciones</h2></div><div class="log">${p.log.map(l=>`<div class="it">${av(user(l[0]),"sm")}<div><div>${esc(l[1])}</div><div class="when">${esc(user(l[0]).name)} · ${ago(l[2])}</div></div></div>`).join("")}</div></section>`:""}`}
@@ -1240,7 +1240,7 @@ function bindGenProject(id){if(!canProj())return;
   $("#view").querySelectorAll("[data-gms]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gms];m[1]=c.checked?1:0;commit(c.checked?`completó «${m[0]}» en`:`reabrió «${m[0]}» en`)});
   $("#view").querySelectorAll("[data-gresp]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gresp];m[2]=c.value;commit(c.value?`asignó «${m[0]}» a ${user(c.value).name} en`:`quitó el responsable de «${m[0]}» en`)});
   $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el hito «${m[0]}» de`)});
-  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR").value]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
+  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR")?$("#gpMsR").value:""]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
@@ -1250,17 +1250,17 @@ function bindGenProject(id){if(!canProj())return;
     const ar=(dbProj(id)||{}).area;GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash=AREAS[ar]?ar:"proyectos"};
 }
 function viewNewProject(ar){const opts=[["general","General · toda la empresa"],...AREA_KEYS.map(k=>[k,AREAS[k].name])];const mine=acct&&acct.member||"";
-  return `<div class="page-head"><div><div class="eyebrow">${AREAS[ar]?esc(AREAS[ar].short):"Proyectos"}</div><h1>Nuevo proyecto</h1><p>Después le agregas hitos, cada uno con su responsable.</p></div></div>
+  return `<div class="page-head"><div><div class="eyebrow">${AREAS[ar]?esc(AREAS[ar].short):"Proyectos"}</div><h1>Nuevo proyecto</h1><p>${ar==="general"?"Después le agregas hitos, cada uno con su responsable.":"Tú quedas como responsable. Después le agregas los hitos."}</p></div></div>
   <form class="panel gp-form" id="npF">
     <label class="field">Nombre<input id="npT" maxlength="80" required placeholder="Ej. Lanzamiento en Costa Rica"></label>
     <label class="field">Descripción<textarea id="npD" maxlength="400" placeholder="¿De qué se trata?"></textarea></label>
     <div class="gp-row"><label class="field">Dónde va<select id="npA">${opts.map(([k,l])=>`<option value="${k}" ${ar===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
-      <label class="field">Responsable<select id="npO"><option value="">Sin responsable</option>${teamUsers().map(u=>`<option value="${esc(u.id)}" ${mine===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+      <label class="field" id="npOw" ${ar==="general"?"":"hidden"}>Responsable<select id="npO"><option value="">Sin responsable</option>${teamUsers().map(u=>`<option value="${esc(u.id)}" ${mine===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
       <label class="field">Fecha<input id="npDue" type="date"></label></div>
     <div class="gp-row" style="justify-content:flex-end"><a class="btn ghost sm" href="#${AREAS[ar]?ar:"proyectos"}" style="text-decoration:none">Cancelar</a><button class="btn sm" type="submit">Crear proyecto</button></div>
   </form>`}
-function bindNewProject(){$("#npT").focus();$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
-  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npO").value,title:$("#npT").value.trim(),desc:$("#npD").value.trim(),due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
+function bindNewProject(){$("#npT").focus();$("#npA").onchange=()=>{$("#npOw").hidden=$("#npA").value!=="general"};$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
+  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npA").value==="general"?$("#npO").value:((acct&&acct.member)||$("#npO").value),title:$("#npT").value.trim(),desc:$("#npD").value.trim(),due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
   GEN=(GEN||[]).concat([p]);setProjects(STATIC.projects);
   if(await saveGen(p,"creó el proyecto"))location.hash="p/"+p.id;else b.disabled=false}}
 function viewProjects(){const ps=genProjects();const vis=p=>filter==="all"||p.status===filter;const shown=ps.filter(vis);

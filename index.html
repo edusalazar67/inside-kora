@@ -516,6 +516,13 @@ select.inline:disabled{cursor:default;opacity:.7}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23AAB6AE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}}
 :root[data-theme="dark"]{--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23AAB6AE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 .team-row select.inline{flex:0 0 auto;width:auto;min-width:150px;max-width:190px}
+
+#fin .savehist{background:none;border:0;border-radius:0;margin-top:4px}
+#fin .savehist>summary{padding:0;font:500 12.5px var(--f-body);color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+#fin .savehist>summary::after{content:""}
+#fin .savehist ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:12.5px;color:var(--muted)}
+#fin .savehist b{color:var(--ink);font-weight:600}
+#fin #saveBtnTop{padding:9px 16px;font-size:13.5px}
 </style>
 
 <!-- ============ APP ============ -->
@@ -554,8 +561,10 @@ select.inline:disabled{cursor:default;opacity:.7}
       <div class="eyebrow">KORA · El Salvador · Modelo financiero</div>
       <h1>Ruta a la rentabilidad</h1>
       <div class="savest busy" id="saveStatus" role="status">● Conectando…</div>
+      <details class="savehist" id="saveHist" hidden><summary>Ver quién editó</summary><ul id="saveHistList"></ul></details>
     </div>
     <div class="controls">
+      <button type="button" class="btn primary" id="saveBtnTop" disabled hidden>Guardar cambios</button>
       <span class="seg" role="group" aria-label="Escenario" id="scSeg"><button type="button" data-sc="cons">Conservador</button><button type="button" data-sc="base">Base</button><button type="button" data-sc="opt">Optimista</button></span>
     </div>
   </header>
@@ -1008,7 +1017,7 @@ window.KORA_FIN={ // lo usa el modelo financiero (script de abajo) para leer y g
         if(r.error){err&&err(r.error);return}cb(snapObj(r.data?r.data.data:null))};
       get();AUTH.channel("fin").on("postgres_changes",{event:"*",schema:"public",table:"finance_docs"},get).subscribe();}
   })}),
-  user:async()=>({id:async()=>acct&&acct.user_id,profiles:async ids=>Object.fromEntries(ids.map(i=>{const x=staffCache.find(y=>y.user_id===i)||(acct&&acct.user_id===i?acct:null);return[i,{name:x?(x.name||x.email):""}]}))})
+  user:async()=>({id:async()=>acct&&acct.user_id,name:async()=>acct?(acct.name||acct.email):"",profiles:async ids=>Object.fromEntries(ids.map(i=>{const x=staffCache.find(y=>y.user_id===i)||(acct&&acct.user_id===i?acct:null);return[i,{name:x?(x.name||x.email):""}]}))})
 };
 
 function route(){
@@ -1312,20 +1321,24 @@ try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s){if(s.sc in SCEN)
 const DOC="modelo/actual";let DB=null,USER=null,lastShared=null,writeTimer=null,writing=false,pending=false,canWrite=true,remoteMeta=null;
 const shared=()=>JSON.stringify({p:S.p,team:S.team,costs:S.costs,bal:S.bal});
 function setStatus(kind,html){const el=document.getElementById("saveStatus");if(!el)return;el.className="savest "+kind;el.innerHTML=html;}
-async function whoSaved(){if(!remoteMeta||!remoteMeta.by||!USER)return"";try{const ps=await USER.profiles([remoteMeta.by]);const n=(ps[remoteMeta.by]||{}).name||"";return n?" por "+n.replace(/[<>&]/g,""):"";}catch(e){return"";}}
+async function whoSaved(){if(remoteMeta&&remoteMeta.byName)return" por "+remoteMeta.byName.replace(/[<>&]/g,"");if(!remoteMeta||!remoteMeta.by||!USER)return"";try{const ps=await USER.profiles([remoteMeta.by]);const n=(ps[remoteMeta.by]||{}).name||"";return n?" por "+n.replace(/[<>&]/g,""):"";}catch(e){return"";}}
 function ago(iso){if(!iso)return"";const m=Math.round((Date.now()-Date.parse(iso))/60000);return m<1?"hace un momento":m<60?"hace "+m+" min":m<1440?"hace "+Math.round(m/60)+" h":"el "+new Date(iso).toLocaleDateString("es");}
-async function showSaved(){setStatus("ok",`● Guardado para todo el equipo${await whoSaved()} · ${ago(remoteMeta&&remoteMeta.at)}`);}
+async function showSaved(){setStatus("ok",`● Último cambio guardado${await whoSaved()} · ${ago(remoteMeta&&remoteMeta.at)}`);renderHist();}
+function renderHist(){const h=(remoteMeta&&remoteMeta.hist)||[],box=document.getElementById("saveHist");if(!box)return;box.hidden=!h.length;
+ document.getElementById("saveHistList").innerHTML=h.map(x=>`<li><b>${String(x.n||"Alguien").replace(/[<>&]/g,"")}</b> · ${new Date(x.at).toLocaleString("es",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}</li>`).join("");}
 let lastRemote=null;
 const dirty=()=>lastShared!==null&&shared()!==lastShared;
 function refreshSave(){const b=document.getElementById("saveBtn"),d=document.getElementById("discardBtn");if(!b)return;const on=!!DB&&canWrite&&dirty();
- b.disabled=!on;{const b2=document.getElementById("saveBtn2");if(b2)b2.disabled=!on;}d.hidden=!dirty();if(dirty())setStatus("busy","● Tienes cambios sin guardar. Presiona Guardar cambios para que el equipo los vea.");}
+ b.disabled=!on;{const b2=document.getElementById("saveBtn2");if(b2)b2.disabled=!on;const b3=document.getElementById("saveBtnTop");if(b3){b3.hidden=!(DB&&canWrite);b3.disabled=!on;}}d.hidden=!dirty();if(dirty())setStatus("busy","● Tienes cambios sin guardar. Toca «Guardar cambios» (arriba a la derecha) para que el equipo los vea.");}
 async function doWrite(){if(writing||!DB||!canWrite)return;writing=true;const body=shared();setStatus("busy","● Guardando…");
  try{const id=USER?await USER.id():null;const at=new Date().toISOString();
-  await DB.doc(DOC).set({...JSON.parse(body),by:id||"",at});lastShared=body;remoteMeta={by:id,at};lastRemote={...JSON.parse(body),by:id,at};await showSaved();}
+  const byName=USER&&USER.name?await USER.name():"";const hist=[{n:byName,at}].concat((lastRemote&&lastRemote.hist)||[]).slice(0,10);
+  const doc={...JSON.parse(body),by:id||"",byName,at,hist};
+  await DB.doc(DOC).set(doc);lastShared=body;remoteMeta={by:id,byName,at,hist};lastRemote=doc;await showSaved();}
  catch(e){const c=e&&e.code;if(c==="permission_denied"||c==="not_granted"||c==="unauthenticated"){canWrite=false;setStatus("warn","● Solo puedes ver. No tienes permiso para guardar cambios.");}else setStatus("warn","● No se pudo guardar. Intenta de nuevo.");}
  writing=false;refreshSave();}
 function applyRemote(d){if(!d||!d.p)return;
- S.p={...D0,...d.p};S.bal={...B0,...(d.bal||{})};if(Array.isArray(d.team))S.team=perPerson(d.team);if(Array.isArray(d.costs))S.costs=d.costs;lastShared=shared();remoteMeta={by:d.by,at:d.at};
+ S.p={...D0,...d.p};S.bal={...B0,...(d.bal||{})};if(Array.isArray(d.team))S.team=perPerson(d.team);if(Array.isArray(d.costs))S.costs=d.costs;lastShared=shared();remoteMeta={by:d.by,byName:d.byName,at:d.at,hist:d.hist};
  syncAll();renderListsFull();update(true);showSaved();}
 async function connectShared(){
  setStatus("busy","● Conectando…");
@@ -1337,7 +1350,7 @@ async function connectShared(){
    if(first&&!(s.metadata&&s.metadata.fromCache)){first=false;clearTimeout(timer);}
    if(s.exists){const d=s.data();lastRemote=d;const body=JSON.stringify({p:d.p,team:d.team,costs:d.costs,bal:{...B0,...(d.bal||{})}});
      if(writing)return;
-     if(lastShared===null||!dirty()){if(body!==lastShared)applyRemote(d);else{remoteMeta={by:d.by,at:d.at};showSaved();}}
+     if(lastShared===null||!dirty()){if(body!==lastShared)applyRemote(d);else{remoteMeta={by:d.by,byName:d.byName,at:d.at,hist:d.hist};showSaved();}}
      else setStatus("warn","● Otra persona guardó cambios mientras editabas. Guarda los tuyos o descártalos para ver los suyos.");}
    else{lastShared=shared();setStatus("busy","● Aún no hay números guardados.");refreshSave();}},
   e=>{clearTimeout(timer);setStatus("warn","● Se perdió la conexión con el guardado compartido.");});}
@@ -1528,6 +1541,7 @@ function copyText(txt,toast,ok){const t=document.getElementById(toast);try{navig
 document.getElementById("copyCsv").addEventListener("click",()=>copyText([COLS.map(c=>c[0]).join(",")].concat(lastRows.map(r=>COLS.map(c=>c[1]==="fecha"?fm(r.t):c[1]==="cash"?Math.round(r.cash):c[2]?r[c[1]].toFixed(2):Math.round(r[c[1]])).join(","))).join("\n"),"csvToast","Copiado. Pégalo en Excel o Google Sheets."));
 document.getElementById("saveBtn").addEventListener("click",doWrite);
 document.getElementById("saveBtn2").addEventListener("click",doWrite);
+document.getElementById("saveBtnTop").addEventListener("click",doWrite);
 document.getElementById("bform").addEventListener("input",e=>{const k=e.target.dataset.b;if(!k)return;if(k==="start"){if(/^\d{4}-\d{2}$/.test(e.target.value))S.bal.start=e.target.value;else return;}else S.bal[k]=Math.max(0,parseFloat(e.target.value)||0);update();});
 document.getElementById("discardBtn").addEventListener("click",()=>{if(lastRemote)applyRemote(lastRemote);});
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",update);}catch(e){}

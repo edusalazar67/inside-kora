@@ -151,10 +151,12 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .pc-list button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;margin-bottom:6px}
 .pc-list .t{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pc-list button:hover .t{text-decoration:underline}
-.quote{margin:20px 0 0;padding:32px 36px;background:linear-gradient(120deg,rgba(243,207,75,.10),rgba(93,190,76,.10))}
+.quote{margin:20px 0 0;}.quote.top{margin:0 0 24px;}.quote{padding:32px 36px;background:linear-gradient(120deg,rgba(243,207,75,.10),rgba(93,190,76,.10))}
 .quote blockquote{margin:10px 0 14px;font-family:var(--f-display);font-size:clamp(20px,2.4vw,28px);line-height:1.3;font-weight:600;color:var(--ink)}
 .quote figcaption{color:var(--ink-2);font-size:14px}.quote figcaption span{display:block;margin-top:4px;font-style:italic;color:var(--ink-3);font-size:13px}
 @media (max-width:560px){.quote{padding:22px 20px}}
+.live-dot::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:1px;animation:lp 1.6s ease-in-out infinite}
+@keyframes lp{50%{opacity:.3}}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -900,11 +902,40 @@ function projCard(p,showOwner){
       <div class="track"><i style="width:${v}%"></i></div>
     </div></button>`;
 }
+let LIVEFEED=[];
+function feedHTML(){
+  const st=S.feed.map(f=>{const u=user(f.who);return{u,text:f.text,pid:f.pid,at:f.at}});
+  const lv=LIVEFEED.map(a=>({u:S.users.find(x=>(x.name||"").toLowerCase()===(a.who||"").toLowerCase())||{name:a.who||"Alguien",color:"#5DBE4C"},text:a.text,pid:a.pid,at:a.at}));
+  const all=st.concat(lv).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,8);
+  return all.map(f=>{const p=f.pid?S.projects.find(x=>x.id===f.pid):null;
+    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`:""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
+function refreshFeed(){const n=document.getElementById("feedList");if(n)n.innerHTML=feedHTML()}
+setInterval(refreshFeed,30000);
+let actStarted=false;
+async function startActivity(){if(actStarted||!AUTH||!acct||acct.role==="pending")return;actStarted=true;
+  try{const r=await AUTH.from("activity").select("who,text,pid,at").order("at",{ascending:false}).limit(20);if(!r.error&&Array.isArray(r.data)){LIVEFEED=r.data;refreshFeed()}}catch(e){}
+  try{AUTH.channel("act").on("postgres_changes",{event:"INSERT",schema:"public",table:"activity"},m=>{LIVEFEED.unshift(m.new);refreshFeed();if(m.new&&m.new.text)toast((m.new.who||"Alguien")+" "+m.new.text)}).subscribe()}catch(e){}}
+/* Nuevas versiones del portal (proyectos que Claude actualiza): se revisan solas cada 2 minutos */
+let dataSig=JSON.stringify({p:STATIC.projects,f:STATIC.feed,u:STATIC.users});
+async function checkNewData(){try{
+  const t=await (await fetch(location.pathname,{cache:"no-store"})).text();
+  const el=new DOMParser().parseFromString(t,"text/html").getElementById("kora-data");if(!el)return;
+  const d=JSON.parse(el.textContent);const sig=JSON.stringify({p:d.projects,f:d.feed,u:d.users});if(sig===dataSig)return;
+  dataSig=sig;Object.assign(STATIC,d);S.projects=d.projects;S.feed=d.feed;S.users=d.users;
+  if(location.hash.slice(1)!=="finanzas"&&!$("#modal").classList.contains("on")){route();if(openId)renderDrawer()}
+  toast("Portal actualizado");}catch(e){}}
+setInterval(checkNewData,120000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){checkNewData();refreshFeed()}});
 function viewPulso(){
   const all=S.projects, active=all.filter(p=>p.status!=="done").length, done=all.filter(p=>p.status==="done").length;
   const people=S.users.length, ov=overallPct();
   const best=AREA_KEYS.slice().sort((a,b)=>areaPct(b)-areaPct(a))[0];
   return `
+  <figure class="panel quote top">
+    <div class="eyebrow">Para founders</div>
+    <blockquote>«Si no te da vergüenza la primera versión de tu producto, lanzaste demasiado tarde.»</blockquote>
+    <figcaption><b>Reid Hoffman</b> · co-fundador de LinkedIn<span>"If you are not embarrassed by the first version of your product, you've launched too late."</span></figcaption>
+  </figure>
   <div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Pulso de KORA</h1>
     <p>Cómo va la empresa hoy, según los proyectos de cada área.</p></div>
     ${isAdmin()?'<button class="btn" data-act="new">+ Nuevo proyecto</button>':""}</div>
@@ -937,11 +968,10 @@ function viewPulso(){
         <div class="track"><i style="width:${areaPct(k)}%"></i></div>
         <div class="meta"><span>${owners.length} persona${owners.length===1?"":"s"}</span><span class="stack">${owners.map(id=>av(user(id),"sm")).join("")}</span></div>
       </div></a>`}).join("")}</div>
-  <figure class="panel quote">
-    <div class="eyebrow">Para founders</div>
-    <blockquote>«Si no te da vergüenza la primera versión de tu producto, lanzaste demasiado tarde.»</blockquote>
-    <figcaption><b>Reid Hoffman</b> · co-fundador de LinkedIn<span>"If you are not embarrassed by the first version of your product, you've launched too late."</span></figcaption>
-  </figure>`;
+  <div class="panel feed">
+    <div class="section-title"><h2>Actividad reciente</h2><span class="eyebrow live-dot">En vivo</span></div>
+    <ul id="feedList">${feedHTML()}</ul>
+  </div>`;
 }
 function filterBar(){
   const opts=[["all","Todos"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"],["done","Completado"]];
@@ -1222,7 +1252,7 @@ async function boot(){
   if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
-  route();live();
+  route();live();startActivity();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

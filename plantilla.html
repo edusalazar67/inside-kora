@@ -764,7 +764,7 @@ async function resolveRole(){
   acct=r.data||{user_id:session.user.id,email:session.user.email,name:(session.user.user_metadata||{}).name||session.user.email,role:"pending"};
   if(acctAdmin())await loadStaff();
 }
-async function loadStaff(){const r=await AUTH.from("staff").select("user_id,email,name,role,created_at").order("created_at");staffCache=r.data||[]}
+async function loadStaff(){const r=await AUTH.from("staff").select("user_id,email,name,role,created_at").order("created_at");staffCache=Array.isArray(r.data)?r.data:[]}
 async function signOut(){if(AUTH)await AUTH.auth.signOut();location.hash="pulso";location.reload()}
 const AUTH_ERR=m=>/Invalid login/i.test(m)?"Correo o contraseña incorrectos.":/already registered|already been registered/i.test(m)?"Ese correo ya tiene cuenta. Toca «Ya tengo cuenta».":/Email not confirmed/i.test(m)?"Primero confirma tu correo: revisa tu bandeja de entrada.":/at least|weak|short/i.test(m)?"La contraseña debe tener al menos 8 caracteres.":/rate limit/i.test(m)?"Demasiados intentos. Espera unos minutos.":/Database error saving/i.test(m)?"Error de la base de datos al crear la cuenta (revisar el SQL). Detalle: "+m:/sending.*(email|confirmation)/i.test(m)?"Supabase no pudo mandar el correo de confirmación. Detalle: "+m:"No se pudo. Detalle: "+(m||"sin mensaje");
 function openAuth(mode){

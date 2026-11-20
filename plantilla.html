@@ -766,7 +766,7 @@ async function resolveRole(){
 }
 async function loadStaff(){const r=await AUTH.from("staff").select("user_id,email,name,role,created_at").order("created_at");staffCache=r.data||[]}
 async function signOut(){if(AUTH)await AUTH.auth.signOut();location.hash="pulso";location.reload()}
-const AUTH_ERR=m=>/Invalid login/i.test(m)?"Correo o contraseña incorrectos.":/already registered|already been registered/i.test(m)?"Ese correo ya tiene cuenta. Toca «Ya tengo cuenta».":/Email not confirmed/i.test(m)?"Primero confirma tu correo: revisa tu bandeja de entrada.":/at least|weak|short/i.test(m)?"La contraseña debe tener al menos 8 caracteres.":/rate limit/i.test(m)?"Demasiados intentos. Espera unos minutos.":"No se pudo. Intenta de nuevo.";
+const AUTH_ERR=m=>/Invalid login/i.test(m)?"Correo o contraseña incorrectos.":/already registered|already been registered/i.test(m)?"Ese correo ya tiene cuenta. Toca «Ya tengo cuenta».":/Email not confirmed/i.test(m)?"Primero confirma tu correo: revisa tu bandeja de entrada.":/at least|weak|short/i.test(m)?"La contraseña debe tener al menos 8 caracteres.":/rate limit/i.test(m)?"Demasiados intentos. Espera unos minutos.":/Database error saving/i.test(m)?"Error de la base de datos al crear la cuenta (revisar el SQL). Detalle: "+m:/sending.*(email|confirmation)/i.test(m)?"Supabase no pudo mandar el correo de confirmación. Detalle: "+m:"No se pudo. Detalle: "+(m||"sin mensaje");
 function openAuth(mode){
   if(!AUTH)return;mode=mode||"in";
   const T={in:"Entrar",up:"Crear cuenta",fp:"Recuperar contraseña",np:"Nueva contraseña"}[mode];
@@ -792,7 +792,7 @@ function openAuth(mode){
         if(!r.error){if(r.data.session){location.reload();return}ok.textContent="Listo. Revisa tu correo y toca el link para confirmar tu cuenta.";}}
       if(mode==="fp"){r=await AUTH.auth.resetPasswordForEmail(email,{redirectTo:SITE});if(!r.error)ok.textContent="Si ese correo tiene cuenta, te llegó un link para cambiar la contraseña.";}
       if(mode==="np"){r=await AUTH.auth.updateUser({password:pw});if(!r.error){toast("Contraseña actualizada");location.hash="pulso";location.reload();return}}
-      if(r&&r.error)err.textContent=AUTH_ERR(r.error.message||"");
+      if(r&&r.error){console.error(r.error);err.textContent=AUTH_ERR((r.error.message||"")+(r.error.status?" ("+r.error.status+(r.error.code?" "+r.error.code:"")+")":""));}
     }catch(x){err.textContent="Sin conexión. Revisa tu internet."}
     btn.disabled=false;};
 }

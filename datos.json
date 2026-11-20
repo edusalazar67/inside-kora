@@ -68,7 +68,8 @@
         ]
       ],
       "links": [],
-      "log": []
+      "log": [],
+      "goal": "Lanzar la app oficialmente el 18 de diciembre con todas las áreas listas."
     },
     {
       "id": "p3",
@@ -117,7 +118,8 @@
           "Al equipo le gustó. Pasamos a la versión real en la web.",
           "2026-11-20T04:30:00Z"
         ]
-      ]
+      ],
+      "goal": "Que todo el equipo vea en un solo lugar el avance de cada área y de la empresa, sin pagar por otra app interna."
     },
     {
       "id": "p1",
@@ -164,7 +166,8 @@
           "https://claude.ai/artifact/KsCghw1Ui4yTdBCaMUfv3q"
         ]
       ],
-      "log": []
+      "log": [],
+      "goal": "Definir precios Micro y Pro para Nicaragua y Costa Rica, listos para validar con los co-founders y lanzar en esos mercados."
     },
     {
       "id": "p2",
@@ -203,7 +206,8 @@
           "#finanzas"
         ]
       ],
-      "log": []
+      "log": [],
+      "goal": "Saber cuánta inversión necesita KORA en El Salvador y en qué mes llega al punto de equilibrio."
     },
     {
       "id": "p4",
@@ -233,7 +237,8 @@
         ]
       ],
       "links": [],
-      "log": []
+      "log": [],
+      "goal": "Fijar los precios base y la oferta de entrada para lanzar en El Salvador."
     }
   ],
   "feed": [

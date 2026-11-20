@@ -134,6 +134,23 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .btn.sm{padding:7px 13px;font-size:13px}
 
 /* ---------- Pulso ---------- */
+.countdown{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px;text-decoration:none;color:inherit;cursor:pointer;background:linear-gradient(120deg,rgba(93,190,76,.16),rgba(243,207,75,.10))}
+.countdown h2{margin:4px 0 2px}.countdown p{margin:0;color:var(--ink-2)}
+.cd-nums{display:flex;gap:10px}
+.cd-box{min-width:70px;padding:12px 10px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);text-align:center}
+.cd-box b{display:block;font-family:var(--f-display);font-size:30px;line-height:1.1;color:var(--green)}
+.cd-box span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+@media (max-width:560px){.cd-nums{width:100%}.cd-box{flex:1;min-width:0}.cd-box b{font-size:24px}}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+@media (max-width:560px){.people{grid-template-columns:1fr}}
+.pc-list li{min-width:0}
+.person-card .empty{margin-top:14px}
+.person-card .sum{white-space:nowrap}
+.pc-list .chip{flex:none}
+.pc-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px}
+.pc-list button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;margin-bottom:6px}
+.pc-list .t{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-list button:hover .t{text-decoration:underline}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -266,9 +283,9 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
   .rail{display:none}
   main{padding-block:20px 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .mtop{display:flex!important}
-  .tabbar{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--rail);
+  .tabbar{display:flex;overflow-x:auto;scrollbar-width:none;position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--rail);
     padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
-  .tabbar a{display:grid;justify-items:center;gap:3px;color:var(--rail-ink-2);text-decoration:none;font-size:10.5px;font-weight:500;padding:4px 0}
+  .tabbar a{flex:1 0 64px;display:grid;justify-items:center;gap:3px;color:var(--rail-ink-2);text-decoration:none;font-size:10.5px;font-weight:500;padding:4px 0}
   .tabbar a.on{color:var(--green)}
   .tabbar svg{width:20px;height:20px}
   .overall{flex-direction:column;align-items:flex-start}
@@ -822,6 +839,7 @@ const ICON={
   team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 14a5 5 0 0 1 3 5"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg>',
+  proj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
 };
 
@@ -830,6 +848,8 @@ function renderShell(){
   const h=location.hash.slice(1)||"pulso";
   $("#nav").innerHTML=
     `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA</a>
+     <a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Proyectos<span class="count num">${genProjects().length||""}</span></a>
+     <a href="#team" class="${h==="team"?"on":""}">${ICON.team}Team</a>
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
      ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
@@ -845,7 +865,7 @@ function renderShell(){
     :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>${AUTH?'<button class="linkbtn" data-act="login">Entrar o crear cuenta</button>':""}`;
   $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:acct?av({name:acct.name||acct.email,color:"#5DBE4C"},"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:AUTH?`<span style="font-size:13px;color:var(--ink-2)">Entrar</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
   const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
-  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
+  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+tab("proyectos","Proyectos",ICON.proj)+tab("team","Team",ICON.team)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
   let b=$("#demoBanner");
   if(false&&!b){b=document.createElement("div");b.id="demoBanner";b.className="demo-banner";b.innerHTML="<b>Modo demo.</b> Los cambios se guardan solo en este navegador. Para el link real, conecta la base de datos (ver la guía).";$("#view").before(b)}
 }
@@ -884,6 +904,7 @@ function viewPulso(){
   <div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Pulso de KORA</h1>
     <p>Cómo va la empresa hoy, según los proyectos de cada área.</p></div>
     ${isAdmin()?'<button class="btn" data-act="new">+ Nuevo proyecto</button>':""}</div>
+  ${countdownPanel()}
   <div class="pulse">
     <div class="panel overall">
       <div class="ring" style="--p:${ov}"><div><div><b class="num">${ov}%</b><br><span>AVANCE</span></div></div></div>
@@ -939,6 +960,31 @@ function viewArea(k){
       <span class="sum num">${mine.length} proyecto${mine.length===1?"":"s"} · ${avg}%</span></div>
       ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,false)).join("")}</div>`:`<div class="empty">${mine.length?"Ningún proyecto con este estado.":"Todavía no tiene proyectos en esta área."}</div>`}</section>`}).join(""):'<div class="empty">Nadie registrado en esta área todavía.</div>'}</div>`;
 }
+const LAUNCH=new Date("2026-12-18T00:00:00-06:00");
+const genProjects=()=>S.projects.filter(p=>p.area==="general");
+function cdParts(){const ms=Math.max(0,LAUNCH-Date.now());return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60,s:Math.floor(ms/1e3)%60,done:ms<=0}}
+function countdownPanel(){const c=cdParts();const g=genProjects().find(p=>/lanzamiento/i.test(p.title));
+  return `<a class="panel countdown" ${g?`data-act="open" data-id="${esc(g.id)}"`:'href="#proyectos"'}>
+    <div class="cd-txt"><div class="eyebrow">Lanzamiento oficial</div><h2>${c.done?"¡KORA ya salió!":"Faltan para el lanzamiento"}</h2><p>18 de diciembre de 2026</p></div>
+    <div class="cd-nums" id="cdNums">${cdHTML(c)}</div></a>`}
+function cdHTML(c){return [["d","días"],["h","horas"],["m","min"],["s","seg"]].map(([k,l])=>`<div class="cd-box"><b class="num">${String(c[k]).padStart(2,"0")}</b><span>${l}</span></div>`).join("")}
+setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHTML(cdParts())},1000);
+function viewProjects(){const ps=genProjects();const vis=p=>filter==="all"||p.status===filter;const shown=ps.filter(vis);
+  return `<div class="page-head"><div><div class="eyebrow">Toda la empresa</div><h1>Proyectos</h1>
+    <p>Los proyectos grandes de KORA, en los que trabajan todas las áreas.</p></div>
+    ${isAdmin()?'<button class="btn" data-act="new" data-area="general">+ Nuevo proyecto</button>':""}</div>
+  ${countdownPanel()}
+  <div class="page-head">${filterBar()}</div>
+  ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,true)).join("")}</div>`:`<div class="empty">${ps.length?"Ningún proyecto con este estado.":"Todavía no hay proyectos generales."}</div>`}`}
+function viewPeople(){
+  const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
+  return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Team</h1>
+    <p>Quién está en KORA y en qué está trabajando ahora.</p></div></div>
+  <div class="people">${S.users.map(u=>{const mine=S.projects.filter(p=>p.owner===u.id);const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
+    return `<section class="panel person-card"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role.includes(areaName(u.area))?u.role:u.role+" · "+areaName(u.area))}</div></div>
+      <span class="sum num">${now.length} en marcha${done?` · ${done} listo${done===1?"":"s"}`:""}</span></div>
+      ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button data-act="open" data-id="${esc(p.id)}"><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
+        :'<div class="empty">Sin proyectos en marcha.</div>'}</section>`}).join("")}</div>`}
 function viewTeam(){
   const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
   return `<div class="page-head"><div><div class="eyebrow">Solo tú ves esta página</div><h1>Equipo</h1>
@@ -1032,6 +1078,8 @@ function route(){
   if(h==="cuentas"&&acctAdmin()){$("#fin").hidden=true;v.innerHTML=viewAccounts();return}
   $("#fin").hidden=true;
   if(AREAS[h])v.innerHTML=viewArea(h);
+  else if(h==="proyectos")v.innerHTML=viewProjects();
+  else if(h==="team")v.innerHTML=viewPeople();
   else if(h==="equipo"&&isAdmin())v.innerHTML=viewTeam();
   else v.innerHTML=viewPulso();
 }
@@ -1050,7 +1098,7 @@ function renderDrawer(){
   $("#drawer").innerHTML=`
   <header>
     <button class="iconbtn x" id="dClose" aria-label="Cerrar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="eyebrow">${AREAS[p.area]?AREAS[p.area].n+" · "+esc(AREAS[p.area].name):""}${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</div>
+    <div class="eyebrow">${AREAS[p.area]?AREAS[p.area].n+" · "+esc(AREAS[p.area].name):p.area==="general"?"Proyecto general · toda la empresa":""}${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</div>
     <h2>${esc(p.title)}</h2>
     <div style="display:flex;align-items:center;gap:12px"><div class="track" style="flex:1;height:10px"><i style="width:${v}%"></i></div><b class="num" style="font-family:var(--f-display)">${v}%</b></div>
   </header>

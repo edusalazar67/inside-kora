@@ -37,6 +37,40 @@
   ],
   "projects": [
     {
+      "id": "g1",
+      "owner": "victor",
+      "area": "general",
+      "title": "Lanzamiento oficial de la app",
+      "status": "doing",
+      "due": "2026-12-18",
+      "example": false,
+      "desc": "KORA sale oficialmente al público el 18 de diciembre. Todas las áreas aportan.",
+      "ms": [
+        [
+          "App lista para salir",
+          0
+        ],
+        [
+          "Pruebas finales con usuarios",
+          0
+        ],
+        [
+          "Campaña de lanzamiento",
+          0
+        ],
+        [
+          "Precios y oferta del primer mes listos",
+          1
+        ],
+        [
+          "Lanzamiento oficial · 18 dic",
+          0
+        ]
+      ],
+      "links": [],
+      "log": []
+    },
+    {
       "id": "p3",
       "owner": "eduardo",
       "area": "research",

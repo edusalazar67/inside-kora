@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
@@ -616,9 +617,9 @@ main .wrap>*{min-width:0}
 </script>
 <script>
 (function(){
-/* ================= Conexión =================
-   Con config.js lleno (Supabase) los datos son compartidos y reales.
-   Sin config.js funciona en "modo demo": todo se guarda solo en este navegador. */
+/* ================= Datos y cuentas =================
+   Proyectos: vienen de datos.json (Claude los actualiza y publica).
+   Cuentas y Finanzas: Supabase (cada persona con su contraseña; Eduardo aprueba y asigna rol). */
 const CFG=window.KORA_CONFIG||{};
 const STATIC=JSON.parse(document.getElementById("kora-data").textContent);
 const LIVE=false;
@@ -733,34 +734,57 @@ function live(){ // cambios en vivo: si el editor actualiza algo, todos lo ven s
   ch.subscribe();
 }
 
-/* ---------- acceso ---------- */
+/* ---------- cuentas ---------- */
+const SBCFG=STATIC.supabase||{};
+const AUTH=(SBCFG.url&&SBCFG.key&&window.supabase)?window.supabase.createClient(SBCFG.url,SBCFG.key):null;
+const SITE=location.origin+location.pathname;
+let acct=null, staffCache=[];
+const ROLE_LBL={admin:"Admin · Finance",cofounder:"Co-founder",finance:"Finance team",pending:"Esperando aprobación"};
+const finView=()=>!!acct&&["admin","cofounder","finance"].includes(acct.role);
+const finEdit=()=>!!acct&&["admin","finance"].includes(acct.role);
+const acctAdmin=()=>!!acct&&acct.role==="admin";
 async function resolveRole(){
-  role="viewer";me=null;
-  if(STATIC)return;
-  const {data:{session}}=await sb.auth.getSession();if(!session)return;
-  const r=await sb.from("staff").select("role,member_id").maybeSingle();
-  if(r.data){role=r.data.role==="admin"?"admin":r.data.role==="finance"?"fin":"viewer";me=r.data.member_id||null}
+  role="viewer";me=null;acct=null;
+  if(!AUTH)return;
+  const {data:{session}}=await AUTH.auth.getSession();if(!session)return;
+  const r=await AUTH.from("staff").select("user_id,email,name,role").eq("user_id",session.user.id).maybeSingle();
+  acct=r.data||{user_id:session.user.id,email:session.user.email,name:(session.user.user_metadata||{}).name||session.user.email,role:"pending"};
+  if(acctAdmin())await loadStaff();
 }
-async function signIn(email,pw){
-  if(!LIVE){if(!pw)return"Escribe la contraseña.";try{sessionStorage.setItem(KEY+"-role",email===CFG.financeEmail||email==="fin"?"fin":"admin")}catch(e){}location.reload();return null}
-  const {error}=await sb.auth.signInWithPassword({email,password:pw});
-  if(error)return"Contraseña incorrecta.";
-  location.reload();return null;
+async function loadStaff(){const r=await AUTH.from("staff").select("user_id,email,name,role,created_at").order("created_at");staffCache=r.data||[]}
+async function signOut(){if(AUTH)await AUTH.auth.signOut();location.hash="pulso";location.reload()}
+const AUTH_ERR=m=>/Invalid login/i.test(m)?"Correo o contraseña incorrectos.":/already registered|already been registered/i.test(m)?"Ese correo ya tiene cuenta. Toca «Ya tengo cuenta».":/Email not confirmed/i.test(m)?"Primero confirma tu correo: revisa tu bandeja de entrada.":/at least|weak|short/i.test(m)?"La contraseña debe tener al menos 8 caracteres.":/rate limit/i.test(m)?"Demasiados intentos. Espera unos minutos.":"No se pudo. Intenta de nuevo.";
+function openAuth(mode){
+  if(!AUTH)return;mode=mode||"in";
+  const T={in:"Entrar",up:"Crear cuenta",fp:"Recuperar contraseña",np:"Nueva contraseña"}[mode];
+  const lead={in:"Con tu correo y tu contraseña.",up:"Pon tu nombre, tu correo y la contraseña que tú quieras. Eduardo aprueba tu cuenta.",fp:"Te mandamos un correo con un link para poner una contraseña nueva.",np:"Escribe tu contraseña nueva."}[mode];
+  $("#modal").innerHTML=`<form id="auF" autocomplete="on">
+    <h2>${T}</h2><p class="hint">${lead}</p>
+    ${mode==="up"?'<label class="field" for="auN">Nombre<input id="auN" required maxlength="40" autocomplete="name" placeholder="Ej. Luma"></label>':""}
+    ${mode!=="np"?'<label class="field" for="auE">Correo<input id="auE" type="email" required autocomplete="username"></label>':""}
+    ${mode!=="fp"?`<label class="field" for="auP">Contraseña<input id="auP" type="password" required ${mode==="in"?'autocomplete="current-password"':'minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres"'}></label>`:""}
+    <div class="lockerr" id="auErr" role="alert"></div><div class="hint" id="auOk" role="status" style="color:var(--green-text)"></div>
+    <div class="actions" style="justify-content:space-between;flex-wrap:wrap">
+      <div style="display:grid;gap:4px;justify-items:start">${mode==="in"?'<button type="button" class="linkbtn" style="color:var(--ink-2)" data-au="up">Crear cuenta</button><button type="button" class="linkbtn" style="color:var(--ink-2)" data-au="fp">Olvidé mi contraseña</button>':mode==="np"?"":'<button type="button" class="linkbtn" style="color:var(--ink-2)" data-au="in">Ya tengo cuenta</button>'}</div>
+      <div style="display:flex;gap:10px"><button type="button" class="btn ghost" id="auX">Cancelar</button><button class="btn" type="submit">${T}</button></div></div></form>`;
+  $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>{const f=$("#auN")||$("#auE")||$("#auP");f&&f.focus()},50);
+  $("#auX").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  $("#modal").querySelectorAll("[data-au]").forEach(b=>b.onclick=()=>openAuth(b.dataset.au));
+  $("#auF").onsubmit=async e=>{e.preventDefault();const err=$("#auErr"),ok=$("#auOk");err.textContent="";ok.textContent="";
+    const email=$("#auE")?$("#auE").value.trim():"",pw=$("#auP")?$("#auP").value:"";let r;
+    const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+    try{
+      if(mode==="in"){r=await AUTH.auth.signInWithPassword({email,password:pw});if(!r.error){location.reload();return}}
+      if(mode==="up"){r=await AUTH.auth.signUp({email,password:pw,options:{data:{name:$("#auN").value.trim()},emailRedirectTo:SITE}});
+        if(!r.error){if(r.data.session){location.reload();return}ok.textContent="Listo. Revisa tu correo y toca el link para confirmar tu cuenta.";}}
+      if(mode==="fp"){r=await AUTH.auth.resetPasswordForEmail(email,{redirectTo:SITE});if(!r.error)ok.textContent="Si ese correo tiene cuenta, te llegó un link para cambiar la contraseña.";}
+      if(mode==="np"){r=await AUTH.auth.updateUser({password:pw});if(!r.error){toast("Contraseña actualizada");location.hash="pulso";location.reload();return}}
+      if(r&&r.error)err.textContent=AUTH_ERR(r.error.message||"");
+    }catch(x){err.textContent="Sin conexión. Revisa tu internet."}
+    btn.disabled=false;};
 }
-async function signOut(){if(LIVE)await sb.auth.signOut();else try{sessionStorage.removeItem(KEY+"-role")}catch(e){}location.hash="pulso";location.reload()}
-
-function openLogin(){
-  $("#modal").innerHTML=`<form id="lgForm" autocomplete="on">
-    <h2>Entrar para editar</h2>
-    <p class="hint">Solo para quien administra Inside KORA. El resto del equipo puede ver todo sin entrar.</p>
-    <label class="field" for="lgE">Correo<input id="lgE" type="email" autocomplete="username" required value="${esc(CFG.editorEmail||"")}"></label>
-    <label class="field" for="lgP">Contraseña<input id="lgP" type="password" autocomplete="current-password" required></label>
-    <div class="lockerr" id="lgErr" role="alert"></div>
-    <div class="actions"><button type="button" class="btn ghost" id="lgCancel">Cancelar</button><button class="btn" type="submit">Entrar</button></div></form>`;
-  $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>($("#lgE").value?$("#lgP"):$("#lgE")).focus(),50);
-  $("#lgCancel").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
-  $("#lgForm").onsubmit=async e=>{e.preventDefault();const m=await signIn($("#lgE").value.trim(),$("#lgP").value);if(m){$("#lgErr").textContent=m;$("#lgP").value=""}};
-}
+if(AUTH)AUTH.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")setTimeout(()=>openAuth("np"),300)});
+function openLogin(){openAuth("in")}
 
 const ICON={
   pulse:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>',
@@ -775,7 +799,8 @@ function renderShell(){
   const h=location.hash.slice(1)||"pulso";
   $("#nav").innerHTML=
     `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA</a>
-     <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${canFin()?"":ICON.lock}</span></a>
+     <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
+     ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
      <div class="label">Áreas</div>`+
     AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("");
@@ -784,10 +809,12 @@ function renderShell(){
     ?`<div class="row">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">Editor · puedes cambiar todo</div></div></div><button class="linkbtn" data-act="logout">Salir del modo editor</button>`
     :role==="fin"
     ?`<div class="row"><span class="av" style="background:var(--green)">${ICON.lock}</span><div><div class="nm">Finanzas abierta</div><div class="rl">Solo lectura</div></div></div><button class="linkbtn" data-act="logout">Cerrar finanzas</button>`
-    :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>`;
-  $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
+    :acct
+    ?`<div class="row">${av({name:acct.name||acct.email,color:"#5DBE4C"})}<div><div class="nm">${esc(acct.name||acct.email)}</div><div class="rl">${esc(ROLE_LBL[acct.role]||acct.role)}</div></div></div><button class="linkbtn" data-act="logout">Salir</button>`
+    :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>${AUTH?'<button class="linkbtn" data-act="login">Entrar o crear cuenta</button>':""}`;
+  $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:acct?av({name:acct.name||acct.email,color:"#5DBE4C"},"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:AUTH?`<span style="font-size:13px;color:var(--ink-2)">Entrar</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
   const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
-  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
+  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
   let b=$("#demoBanner");
   if(false&&!b){b=document.createElement("div");b.id="demoBanner";b.className="demo-banner";b.innerHTML="<b>Modo demo.</b> Los cambios se guardan solo en este navegador. Para el link real, conecta la base de datos (ver la guía).";$("#view").before(b)}
 }
@@ -795,6 +822,7 @@ document.addEventListener("click",e=>{
   const a=e.target.closest("[data-act]");if(!a)return;
   const act=a.dataset.act;
   if(act==="logout")signOut();
+  if(act==="mbtn"){acct?signOut():openLogin()}
   if(act==="login")openLogin();
   if(act==="open")openDrawer(a.dataset.id);
   if(act==="new")openModal(null,a.dataset.area);
@@ -803,6 +831,7 @@ document.addEventListener("click",e=>{
 });
 
 
+$("#mUser").onclick=()=>{if(!AUTH)return;acct?signOut():openLogin()};
 /* ---------- Vistas ---------- */
 function projCard(p,showOwner){
   const u=user(p.owner),v=pct(p);
@@ -887,7 +916,29 @@ function viewTeam(){
       <span class="hint num">${n} proyecto${n===1?"":"s"}</span><button class="btn ghost sm" data-act="person" data-id="${esc(u.id)}">${ICON.edit}Editar</button></div>`}).join("")||'<div class="empty">Agrega a la primera persona.</div>'}</div>`;
 }
 
-/* ---------- Finanzas: vive en un link privado aparte ---------- */
+/* ---------- Finanzas con cuentas ---------- */
+function viewFinGate(){
+  const pend=acct&&acct.role==="pending";
+  return `<div class="lockwrap"><div class="lockbox">
+  <div class="lockic">${ICON.lock}</div>
+  <div><div class="eyebrow">Acceso con cuenta</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
+  <p style="color:var(--ink-2);margin:6px 0 0">${pend?"Tu cuenta ya existe. Falta que Eduardo la apruebe para que veas Finanzas.":"Solo para co-founders y el finance team. Entra con tu correo y tu contraseña."}</p></div>
+  ${pend?"":'<button class="btn" data-act="login" style="justify-content:center">Entrar</button><p class="hint">¿Primera vez? Toca Entrar y luego «Crear cuenta».</p>'}</div></div>`}
+function viewAccounts(){
+  const opts=[["pending","Sin acceso"],["cofounder","Co-founder"],["finance","Finance team"],["admin","Admin"]];
+  const pend=staffCache.filter(x=>x.role==="pending");
+  return `<div class="page-head"><div><div class="eyebrow">Solo tú ves esta página</div><h1>Cuentas</h1>
+    <p>Cada persona crea su cuenta con su propia contraseña. Aquí le das su rol. Co-founder ve Finanzas; Finance team la ve y la puede cambiar.</p></div></div>
+  ${pend.length?`<div class="demo-banner"><b>${pend.length} cuenta${pend.length===1?"":"s"} esperando aprobación.</b> Elige su rol para darle acceso.</div>`:""}
+  <div class="team-list">${staffCache.map(x=>`<div class="team-row">${av({name:x.name||x.email,color:x.role==="pending"?"#C9C9BF":"#5DBE4C"})}
+    <div class="tm"><div class="nm">${esc(x.name||"Sin nombre")}${x.user_id===acct.user_id?' <span class="hint">(tú)</span>':""}</div><div class="rl">${esc(x.email)}</div></div>
+    <select class="inline" data-acct="${esc(x.user_id)}" style="max-width:170px" ${x.user_id===acct.user_id?"disabled":""}>${opts.map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select></div>`).join("")||'<div class="empty">Todavía nadie ha creado cuenta.</div>'}</div>`;
+}
+document.addEventListener("change",async e=>{const sel=e.target.closest("[data-acct]");if(!sel||!acctAdmin())return;
+  const r=await AUTH.from("staff").update({role:sel.value}).eq("user_id",sel.dataset.acct);
+  if(r.error){toast("No se pudo cambiar el rol");}else{toast("Rol actualizado")}
+  await loadStaff();route();});
+/* ---------- Finanzas: link privado (si no hay cuentas configuradas) ---------- */
 function viewFinLink(){return `<div class="lockwrap"><div class="lockbox">
   <div class="lockic">${ICON.lock}</div>
   <div><div class="eyebrow">Acceso privado</div><h1 style="font-size:24px;margin-top:4px">Modelo financiero</h1>
@@ -903,32 +954,32 @@ function viewLock(){return `<div class="lockwrap"><form class="lockbox" id="finF
   <button class="btn" type="submit">Entrar a finanzas</button></form></div>`}
 function bindLock(){const f=$("#finForm");$("#finP").focus();f.addEventListener("submit",async e=>{e.preventDefault();
   const m=await signIn(CFG.financeEmail||"fin",$("#finP").value);if(m){$("#finErr").textContent=m;$("#finP").value="";$("#finP").focus()}})}
-function finHead(){return `<div class="finbar"><span class="eyebrow">${ICON.lock} Finanzas · acceso protegido${isAdmin()?" · puedes editar":" · solo lectura"}</span>
-  ${role==="fin"?'<button class="btn ghost sm" data-act="logout">Cerrar finanzas</button>':""}</div>`}
+function finHead(){return `<div class="finbar"><span class="eyebrow">${ICON.lock} Finanzas · ${esc(ROLE_LBL[acct.role])}${finEdit()?" · puedes editar":" · solo lectura"}</span></div>`}
 let finStarted=false;
 function startFin(){if(finStarted)return;finStarted=true;try{initFin()}catch(e){console.error(e)}}
 const snapObj=d=>({exists:!!d,data:()=>d,metadata:{}});
 window.KORA_FIN={ // lo usa el modelo financiero (script de abajo) para leer y guardar sus números
-  canWrite:()=>isAdmin(),
+  canWrite:()=>finEdit(),
   db:async()=>({doc:id=>({
-    set:async d=>{if(!isAdmin())throw{code:"permission_denied"};
-      if(!LIVE){try{localStorage.setItem(KEY+"-fin-"+id,JSON.stringify(d))}catch(e){}return}
-      const r=await sb.from("finance_docs").upsert({id,data:d,updated_at:new Date().toISOString()});if(r.error)throw{code:"permission_denied"}},
+    set:async d=>{if(!finEdit())throw{code:"permission_denied"};
+      const r=await AUTH.from("finance_docs").upsert({id,data:d,updated_at:new Date().toISOString()});if(r.error)throw{code:"permission_denied"}},
     onSnapshot:(cb,err)=>{const get=async()=>{
-        if(!LIVE){let d=null;try{d=JSON.parse(localStorage.getItem(KEY+"-fin-"+id)||"null")}catch(e){}cb(snapObj(d));return}
-        const r=await sb.from("finance_docs").select("data").eq("id",id).maybeSingle();
+        const r=await AUTH.from("finance_docs").select("data").eq("id",id).maybeSingle();
         if(r.error){err&&err(r.error);return}cb(snapObj(r.data?r.data.data:null))};
-      get();if(LIVE)sb.channel("fin").on("postgres_changes",{event:"*",schema:"public",table:"finance_docs"},get).subscribe();}
+      get();AUTH.channel("fin").on("postgres_changes",{event:"*",schema:"public",table:"finance_docs"},get).subscribe();}
   })}),
-  user:async()=>({id:async()=>me,profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:user(i).name}]))})
+  user:async()=>({id:async()=>acct&&acct.user_id,profiles:async ids=>Object.fromEntries(ids.map(i=>{const x=staffCache.find(y=>y.user_id===i)||(acct&&acct.user_id===i?acct:null);return[i,{name:x?(x.name||x.email):""}]}))})
 };
 
 function route(){
   const h=location.hash.slice(1)||"pulso";
   renderShell();
   const v=$("#view");
-  if(h==="finanzas"){ $("#fin").hidden=true;v.innerHTML=viewFinLink();return; }
-  if(h==="finanzas"){ if(canFin()){v.innerHTML=finHead();$("#fin").hidden=false;startFin();} else {$("#fin").hidden=true;v.innerHTML=viewLock();bindLock();} return; }
+  if(h==="finanzas"){
+    if(!AUTH){$("#fin").hidden=true;v.innerHTML=viewFinLink();return}
+    if(finView()){v.innerHTML=finHead();$("#fin").hidden=false;startFin();}else{$("#fin").hidden=true;v.innerHTML=viewFinGate();}
+    return; }
+  if(h==="cuentas"&&acctAdmin()){$("#fin").hidden=true;v.innerHTML=viewAccounts();return}
   $("#fin").hidden=true;
   if(AREAS[h])v.innerHTML=viewArea(h);
   else if(h==="equipo"&&isAdmin())v.innerHTML=viewTeam();

@@ -510,6 +510,21 @@ main .wrap>*{min-width:0}
 </style>
 
 <!-- ============ APP ============ -->
+<!-- ============ INICIO ============ -->
+<section id="login" hidden>
+  <div class="login-box" style="max-width:520px">
+    <div class="login-head">
+      <div class="wordmark">KORA</div>
+      <h1>Inside KORA</h1>
+      <p id="wlText">El portal interno de KORA: cómo avanza la empresa, cada área y cada proyecto, en un solo lugar.</p>
+    </div>
+    <div id="wlBtns" style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" data-act="login" style="padding:12px 26px">Entrar</button>
+      <button class="btn ghost" data-act="signup" style="padding:12px 26px;color:var(--rail-ink);border-color:rgba(255,255,255,.25)">Crear cuenta</button>
+    </div>
+    <div class="login-foot" id="wlFoot">¿Primera vez? Toca «Crear cuenta» y pon la contraseña que tú quieras. Eduardo aprueba tu acceso.</div>
+  </div>
+</section>
 <div id="app" hidden>
   <aside class="rail">
     <div class="brand"><small>Inside</small><div class="wordmark">KORA</div></div>
@@ -824,6 +839,7 @@ document.addEventListener("click",e=>{
   if(act==="logout")signOut();
   if(act==="mbtn"){acct?signOut():openLogin()}
   if(act==="login")openLogin();
+  if(act==="signup")openAuth("up");
   if(act==="open")openDrawer(a.dataset.id);
   if(act==="new")openModal(null,a.dataset.area);
   if(act==="filter"){filter=a.dataset.f;route()}
@@ -1107,8 +1123,17 @@ function closeModal(){const m=$("#modal");if(!m.classList.contains("on"))return;
 
 /* ---------- Arranque ---------- */
 async function boot(){
-  $("#app").hidden=false;
-  try{await resolveRole()}catch(e){console.error(e)}
+  if(AUTH){
+    try{await resolveRole()}catch(e){console.error(e)}
+    if(!acct||acct.role==="pending"){
+      $("#login").hidden=false;$("#app").hidden=true;
+      if(acct){$("#wlText").innerHTML=`Hola${acct.name?", "+esc(acct.name):""}. Tu cuenta ya está creada. Falta que Eduardo la apruebe; cuando lo haga, recarga esta página.`;
+        $("#wlBtns").innerHTML='<button class="btn ghost" data-act="logout" style="color:var(--rail-ink);border-color:rgba(255,255,255,.25)">Salir</button>';$("#wlFoot").textContent=acct.email;}
+      return;
+    }
+  }
+  $("#login").hidden=true;$("#app").hidden=false;
+  if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
   route();live();

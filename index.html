@@ -556,6 +556,8 @@ select.inline:disabled{cursor:default;opacity:.7}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23AAB6AE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}}
 :root[data-theme="dark"]{--chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23AAB6AE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 .team-row select.inline{flex:0 0 auto;width:auto;min-width:150px;max-width:190px}
+.team-row select.who{min-width:130px;max-width:170px}
+@media (max-width:640px){.team-row{flex-wrap:wrap}.team-row select.inline{flex:1 1 140px}}
 
 #fin .savehist{background:none;border:0;border-radius:0;margin-top:4px}
 #fin .savehist>summary{padding:0;font:500 12.5px var(--f-body);color:var(--muted);text-decoration:underline;text-underline-offset:3px}
@@ -746,7 +748,7 @@ const isAdmin=()=>role==="admin", canFin=()=>role==="admin"||role==="fin";
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const user=id=>S.users.find(u=>u.id===id)||{name:"?",role:"",color:"#999",id};
+const user=id=>S.users.find(u=>u.id===id)||(TEAM||[]).map(teamUser).find(u=>u.id===id)||{name:"?",role:"",color:"#999",id};
 const initials=n=>String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
 const av=(u,cls="")=>`<span class="av ${cls}" style="--c:${esc(u.color)};background:${esc(u.color)}" title="${esc(u.name)}">${esc(initials(u.name))}</span>`;
 const pct=p=>{if(p.status==="done")return 100;if(!p.ms.length)return p.status==="todo"?0:p.status==="review"?80:30;return Math.round(p.ms.filter(m=>m[1]).length/p.ms.length*100)};
@@ -820,20 +822,45 @@ async function resolveRole(){
   role="viewer";me=null;acct=null;
   if(!AUTH)return;
   const {data:{session}}=await AUTH.auth.getSession();if(!session)return;
-  const r=await AUTH.from("staff").select("user_id,email,name,role").eq("user_id",session.user.id).maybeSingle();
+  const r=await AUTH.from("staff").select("*").eq("user_id",session.user.id).maybeSingle();
   acct=r.data||{user_id:session.user.id,email:session.user.email,name:(session.user.user_metadata||{}).name||session.user.email,role:"pending"};
   if(acctAdmin())await loadStaff();
 }
-async function loadStaff(){const r=await AUTH.from("staff").select("user_id,email,name,role,created_at").order("created_at");staffCache=Array.isArray(r.data)?r.data:[]}
+async function loadStaff(){const r=await AUTH.from("staff").select("*").order("created_at");staffCache=Array.isArray(r.data)?r.data:[]}
 async function signOut(){if(AUTH)await AUTH.auth.signOut();location.hash="pulso";location.reload()}
 const AUTH_ERR=m=>/Invalid login/i.test(m)?"Correo o contraseña incorrectos.":/already registered|already been registered/i.test(m)?"Ese correo ya tiene cuenta. Toca «Ya tengo cuenta».":/Email not confirmed/i.test(m)?"Primero confirma tu correo: revisa tu bandeja de entrada.":/at least|weak|short/i.test(m)?"La contraseña debe tener al menos 8 caracteres.":/rate limit/i.test(m)?"Demasiados intentos. Espera unos minutos.":/Database error saving/i.test(m)?"Error de la base de datos al crear la cuenta (revisar el SQL). Detalle: "+m:/sending.*(email|confirmation)/i.test(m)?"Supabase no pudo mandar el correo de confirmación. Detalle: "+m:"No se pudo. Detalle: "+(m||"sin mensaje");
+/* ---------- ¿Quién eres? y Team con cuentas reales ---------- */
+let TEAM=null;
+const AREA_LBL=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:"";
+function teamUser(t){const k=S.users.find(u=>u.id===t.member);
+  return k?{...k,name:t.name||k.name}:{id:t.member,name:t.name||"Sin nombre",role:AREA_LBL(t.area)||"Equipo",area:t.area||"",color:COLORS[[...t.member].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length]}}
+const teamUsers=()=>(TEAM||[]).map(teamUser);
+async function loadTeam(){if(!AUTH||!acct)return;try{const r=await AUTH.rpc("team_members");if(!r.error&&Array.isArray(r.data))TEAM=r.data}catch(e){}}
+function whoFields(px,cur){const taken=new Set((TEAM||[]).map(t=>t.member));
+  return `<label class="field" for="${px}M">¿Quién eres?<select id="${px}M" required><option value="">Elige tu nombre</option>${S.users.filter(u=>!taken.has(u.id)||u.id===cur).map(u=>`<option value="${esc(u.id)}" ${cur===u.id?"selected":""}>${esc(u.name)} · ${esc(u.role)}</option>`).join("")}<option value="otro">Otra persona (no estoy en la lista)</option></select></label>
+  <div id="${px}Other" hidden style="display:grid;gap:12px"><label class="field" for="${px}N">Tu nombre<input id="${px}N" maxlength="40" autocomplete="name" placeholder="Ej. Ana"></label>
+  <label class="field" for="${px}A">Tu área<select id="${px}A">${AREA_OPTS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label></div>`}
+function bindWho(px){const sel=$("#"+px+"M"),o=$("#"+px+"Other");const f=()=>{const ot=sel.value==="otro";o.hidden=!ot;o.style.display=ot?"grid":"none";$("#"+px+"N").required=ot};sel.onchange=f;f()}
+function whoData(px){const m=$("#"+px+"M").value;
+  if(m==="otro"){const n=$("#"+px+"N").value.trim();return{name:n,member:"x-"+n.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"").slice(0,20)+"-"+Math.random().toString(36).slice(2,6),area:$("#"+px+"A").value}}
+  const u=S.users.find(x=>x.id===m);return{name:u?u.name:"",member:m,area:u?u.area:""}}
+function openClaim(){
+  $("#modal").innerHTML=`<form id="clF"><h2>¿Quién eres?</h2><p class="hint">Así sales en Team y te pueden asignar hitos. Solo se pregunta una vez.</p>
+    ${whoFields("cl")}<div class="lockerr" id="clErr" role="alert"></div>
+    <div class="actions" style="justify-content:flex-end"><button type="button" class="btn ghost" id="clX">Después</button><button class="btn" type="submit">Listo</button></div></form>`;
+  $("#modal").classList.add("on");$("#scrim").classList.add("on");bindWho("cl");
+  $("#clX").onclick=()=>{try{sessionStorage.setItem("ik-claim-later","1")}catch(_){}closeModal()};
+  $("#clF").onsubmit=async e=>{e.preventDefault();const d=whoData("cl");
+    const r=await AUTH.rpc("claim_member",{m:d.member,a:d.area,n:d.name});
+    if(r.error||r.data!=="ok"){$("#clErr").textContent=r.data==="taken"?"Esa persona ya tiene cuenta. Si eres tú, avísale a Eduardo.":"No se pudo guardar. "+((r.error&&r.error.message)||"");return}
+    acct.member=d.member;acct.area=d.area;if(d.name)acct.name=d.name;closeModal();await loadTeam();if(acctAdmin())await loadStaff();route();toast("¡Listo!")}}
 function openAuth(mode){
   if(!AUTH)return;mode=mode||"in";
   const T={in:"Entrar",up:"Crear cuenta",fp:"Recuperar contraseña",np:"Nueva contraseña"}[mode];
-  const lead={in:"Con tu correo y tu contraseña.",up:"Pon tu nombre, tu correo y la contraseña que tú quieras. Eduardo aprueba tu cuenta.",fp:"Te mandamos un correo con un link para poner una contraseña nueva.",np:"Escribe tu contraseña nueva."}[mode];
+  const lead={in:"Con tu correo y tu contraseña.",up:"Di quién eres, pon tu correo y la contraseña que tú quieras. Eduardo revisa y aprueba tu cuenta.",fp:"Te mandamos un correo con un link para poner una contraseña nueva.",np:"Escribe tu contraseña nueva."}[mode];
   $("#modal").innerHTML=`<form id="auF" autocomplete="on">
     <h2>${T}</h2><p class="hint">${lead}</p>
-    ${mode==="up"?'<label class="field" for="auN">Nombre<input id="auN" required maxlength="40" autocomplete="name" placeholder="Ej. Luma"></label>':""}
+    ${mode==="up"?whoFields("au"):""}
     ${mode!=="np"?'<label class="field" for="auE">Correo<input id="auE" type="email" required autocomplete="username"></label>':""}
     ${mode!=="fp"?`<label class="field" for="auP">Contraseña<input id="auP" type="password" required ${mode==="in"?'autocomplete="current-password"':'minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres"'}></label>`:""}
     <div class="lockerr" id="auErr" role="alert"></div><div class="hint" id="auOk" role="status" style="color:var(--green-text)"></div>
@@ -842,13 +869,14 @@ function openAuth(mode){
       <div style="display:flex;gap:10px"><button type="button" class="btn ghost" id="auX">Cancelar</button><button class="btn" type="submit">${T}</button></div></div></form>`;
   $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>{const f=$("#auN")||$("#auE")||$("#auP");f&&f.focus()},50);
   $("#auX").onclick=closeModal;$("#modal").onclick=e=>{if(e.target.id==="modal")closeModal()};
+  if(mode==="up")bindWho("au");
   $("#modal").querySelectorAll("[data-au]").forEach(b=>b.onclick=()=>openAuth(b.dataset.au));
   $("#auF").onsubmit=async e=>{e.preventDefault();const err=$("#auErr"),ok=$("#auOk");err.textContent="";ok.textContent="";
     const email=$("#auE")?$("#auE").value.trim():"",pw=$("#auP")?$("#auP").value:"";let r;
     const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
     try{
       if(mode==="in"){r=await AUTH.auth.signInWithPassword({email,password:pw});if(!r.error){location.reload();return}}
-      if(mode==="up"){r=await AUTH.auth.signUp({email,password:pw,options:{data:{name:$("#auN").value.trim()},emailRedirectTo:SITE}});
+      if(mode==="up"){r=await AUTH.auth.signUp({email,password:pw,options:{data:whoData("au"),emailRedirectTo:SITE}});
         if(!r.error){if(r.data.session){location.reload();return}ok.textContent="Listo. Revisa tu correo y toca el link para confirmar tu cuenta.";}}
       if(mode==="fp"){r=await AUTH.auth.resetPasswordForEmail(email,{redirectTo:SITE});if(!r.error)ok.textContent="Si ese correo tiene cuenta, te llegó un link para cambiar la contraseña.";}
       if(mode==="np"){r=await AUTH.auth.updateUser({password:pw});if(!r.error){toast("Contraseña actualizada");location.hash="pulso";location.reload();return}}
@@ -958,7 +986,7 @@ setInterval(checkNewData,120000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){checkNewData();refreshFeed()}});
 function viewPulso(){
   const all=S.projects, active=all.filter(p=>p.status!=="done").length, done=all.filter(p=>p.status==="done").length;
-  const people=S.users.length, ov=overallPct();
+  const people=TEAM?TEAM.length:0, ov=overallPct();
   const best=AREA_KEYS.slice().sort((a,b)=>areaPct(b)-areaPct(a))[0];
   return `
   <figure class="panel quote top">
@@ -1057,7 +1085,7 @@ async function saveGen(p,act){
   const r=await AUTH.from("gen_projects").upsert({id,data:d,updated_at:new Date().toISOString()});
   if(r.error){toast("No se pudo guardar: "+(r.error.message||""));try{GEN=await fetchGen();setProjects(STATIC.projects)}catch(_){}route();return false}
   return true}
-const respSel=(val,attrs)=>`<select class="inline resp" ${attrs}><option value="">Sin responsable</option>${S.users.map(u=>`<option value="${esc(u.id)}" ${val===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`;
+const respSel=(val,attrs)=>`<select class="inline resp" ${attrs}><option value="">Sin responsable</option>${teamUsers().concat(val&&!teamUsers().some(u=>u.id===val)?[user(val)]:[]).map(u=>`<option value="${esc(u.id)}" ${val===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`;
 function daysTo(d){if(!d)return null;return Math.ceil((new Date(d+"T00:00:00-06:00")-Date.now())/864e5)}
 function viewGenProject(id){
   const p=genProjects().find(x=>x.id===id),ed=canProj(),v=pct(p),dl=daysTo(p.due);
@@ -1127,7 +1155,8 @@ function viewPeople(){
   const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;
   return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Team</h1>
     <p>Quién está en KORA y en qué está trabajando ahora.</p></div></div>
-  <div class="people">${S.users.map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p.area==="general"&&p.ms.some(m=>m[2]===u.id&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
+  ${TEAM===null?'<div class="empty">Cargando el equipo…</div>':!TEAM.length?'<div class="empty">Todavía nadie ha entrado al portal. Cuando cada persona cree su cuenta y Eduardo la apruebe, aparece aquí.</div>':""}
+  <div class="people">${teamUsers().map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p.area==="general"&&p.ms.some(m=>m[2]===u.id&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
     return `<section class="panel person-card"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role.includes(areaName(u.area))?u.role:u.role+" · "+areaName(u.area))}</div></div>
       <span class="sum num">${now.length} en marcha${done?` · ${done} listo${done===1?"":"s"}`:""}</span></div>
       ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button ${p.area==="general"?`onclick="location.hash='p/${esc(p.id)}'"`:`data-act="open" data-id="${esc(p.id)}"`}><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
@@ -1168,16 +1197,21 @@ function viewAccounts(){
   const opts=[["pending","Sin acceso"],["cofounder","Co-founder"],["finance","Finance team"],["admin","Admin"]];
   const pend=staffCache.filter(x=>x.role==="pending");
   return `<div class="page-head"><div><div class="eyebrow">Solo tú ves esta página</div><h1>Cuentas</h1>
-    <p>Cada persona crea su cuenta con su propia contraseña. Aquí le das su rol. Co-founder ve Finanzas; Finance team la ve y la puede cambiar.</p></div></div>
+    <p>Cada persona crea su cuenta y dice quién es. Revisa que sea correcto y dale su rol. Co-founder ve Finanzas; Finance team la ve y la puede cambiar.</p></div></div>
   ${pend.length?`<div class="demo-banner"><b>${pend.length} cuenta${pend.length===1?"":"s"} esperando aprobación.</b> Elige su rol para darle acceso.</div>`:""}
   <div class="team-list">${staffCache.map(x=>`<div class="team-row">${av({name:x.name||x.email,color:x.role==="pending"?"#C9C9BF":"#5DBE4C"})}
     <div class="tm"><div class="nm">${esc(x.name||"Sin nombre")}${x.user_id===acct.user_id?' <span class="hint">(tú)</span>':""}</div><div class="rl">${esc(x.email)}</div></div>
+    <select class="inline who" data-acctm="${esc(x.user_id)}" title="Quién es">${x.member&&!S.users.some(u=>u.id===x.member)?`<option value="${esc(x.member)}" selected>${esc(x.name||"Otra persona")} · ${esc(AREA_LBL(x.area)||"otra")}</option>`:""}<option value="" ${x.member?"":"selected"}>¿Quién es?</option>${S.users.map(u=>`<option value="${esc(u.id)}" ${x.member===u.id?"selected":""} ${staffCache.some(y=>y.member===u.id&&y.user_id!==x.user_id)?"disabled":""}>${esc(u.name)}</option>`).join("")}</select>
     <select class="inline" data-acct="${esc(x.user_id)}" ${x.user_id===acct.user_id?"disabled":""}>${opts.map(([k,l])=>`<option value="${k}" ${x.role===k?"selected":""}>${l}</option>`).join("")}</select></div>`).join("")||'<div class="empty">Todavía nadie ha creado cuenta.</div>'}</div>`;
 }
+document.addEventListener("change",async e=>{const ms=e.target.closest("[data-acctm]");if(!ms||!acctAdmin())return;
+  const u=S.users.find(x=>x.id===ms.value);const upd={member:ms.value||null};if(u){upd.area=u.area;upd.name=u.name}
+  const r=await AUTH.from("staff").update(upd).eq("user_id",ms.dataset.acctm);
+  toast(r.error?"No se pudo cambiar":"Listo");await loadStaff();await loadTeam();route();});
 document.addEventListener("change",async e=>{const sel=e.target.closest("[data-acct]");if(!sel||!acctAdmin())return;
   const r=await AUTH.from("staff").update({role:sel.value}).eq("user_id",sel.dataset.acct);
   if(r.error){toast("No se pudo cambiar el rol");}else{toast("Rol actualizado")}
-  await loadStaff();route();});
+  await loadStaff();await loadTeam();route();});
 /* ---------- Finanzas: link privado (si no hay cuentas configuradas) ---------- */
 function viewFinLink(){return `<div class="lockwrap"><div class="lockbox">
   <div class="lockic">${ICON.lock}</div>
@@ -1367,8 +1401,10 @@ async function boot(){
   if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
-  await loadGen();
+  await Promise.all([loadGen(),loadTeam()]);
   route();live();startActivity();
+  let later=false;try{later=!!sessionStorage.getItem("ik-claim-later")}catch(_){}
+  if(AUTH&&acct&&!acct.member&&TEAM!==null&&!later)setTimeout(openClaim,400);
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();

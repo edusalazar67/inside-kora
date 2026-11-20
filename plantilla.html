@@ -1170,7 +1170,7 @@ function bindMeetings(openNew){if(!canMeet())return;
 let projClosed=false;try{projClosed=!!localStorage.getItem("ik-pclosed")}catch(_){}
 let GEN=null, genReady=false, pEditing=false;
 const canProj=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&genReady);
-function setProjects(stat){const base=stat.filter(p=>p.area!=="general"&&!(GEN||[]).some(g=>g.id===p.id));const gen=GEN||stat.filter(p=>p.area==="general");S.projects=gen.concat(base)}
+function setProjects(stat){S.projects=GEN?GEN.slice():stat.slice()} /* con base de datos, todos los proyectos viven ahí; lo borrado no regresa */
 const toGen=r=>Object.assign({},r.data,{id:r.id,area:(r.data&&r.data.area)||"general",_db:1});
 let genMeta=null;
 async function fetchGen(){const r=await AUTH.from("gen_projects").select("id,data,updated_at").order("created_at",{ascending:true});if(r.error)throw r.error;

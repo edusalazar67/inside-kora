@@ -1640,6 +1640,9 @@ async function boot(){
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
   await Promise.all([loadGen(),loadTeam(),loadMeetings(),loadChat()]);
+  /* 21 nov: Market y Precios El Salvador pasa a la cuenta de Molina (una vez) */
+  try{const mo=(TEAM||[]).find(t=>/molina/i.test(t.name||"")&&t.member!=="diego");const p4=dbProj("p4");
+    if(mo&&p4&&!p4._toMolina){p4._toMolina=1;p4.owner=mo.member;setProjects(STATIC.projects);saveGen(p4,`pasó a ${mo.name} el proyecto`)}}catch(e){}
   route();live();startActivity();
   let later=false;try{later=!!sessionStorage.getItem("ik-claim-later")}catch(_){}
   if(AUTH&&acct&&!acct.member&&TEAM!==null&&!later)setTimeout(openClaim,400);

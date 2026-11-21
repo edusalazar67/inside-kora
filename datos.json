@@ -22,7 +22,7 @@
     },
     {
       "id": "diego",
-      "name": "Diego",
+      "name": "Diego Molina",
       "role": "Research & BI",
       "area": "research",
       "color": "#A7B8F0"
@@ -42,9 +42,9 @@
       "area": "general",
       "title": "Lanzamiento oficial de la app",
       "status": "doing",
-      "due": "2026-12-18",
+      "due": "2026-12-21",
       "example": false,
-      "desc": "KORA sale oficialmente al público el 18 de diciembre. Todas las áreas aportan.",
+      "desc": "KORA sale oficialmente al público el lunes 21 de diciembre en la App Store. Todas las áreas aportan.",
       "ms": [
         [
           "App lista para salir",
@@ -63,13 +63,13 @@
           1
         ],
         [
-          "Lanzamiento oficial · 18 dic",
+          "Lanzamiento oficial · 21 dic",
           0
         ]
       ],
       "links": [],
       "log": [],
-      "goal": "Lanzar la app oficialmente el 18 de diciembre con todas las áreas listas."
+      "goal": "Lanzar la app oficialmente el lunes 21 de diciembre en la App Store con todas las áreas listas."
     },
     {
       "id": "p3",

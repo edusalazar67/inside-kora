@@ -104,7 +104,7 @@ button{cursor:pointer}
 
 /* ---------- Shell ---------- */
 #app{display:grid;grid-template-columns:232px 1fr;min-height:100%}
-.rail{background:var(--rail);color:var(--rail-ink);padding:24px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.rail{background:var(--rail);color:var(--rail-ink);padding:24px 14px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:thin}
 .rail .brand{padding:0 10px}
 .rail .brand small{display:block;color:var(--rail-ink-2);font-size:11.5px;letter-spacing:.06em;margin-top:6px}
 .nav{display:grid;gap:2px;grid-template-columns:minmax(0,1fr)}
@@ -198,6 +198,26 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .mt-log summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
 .mt-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:12px}
 .mt-notes{white-space:pre-wrap;font-size:14px;margin-top:6px}
+.asg{position:relative;flex:none}
+.asg summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-width:44px;min-height:30px;padding:2px 8px;border:1px dashed var(--line);border-radius:999px;font-size:12.5px}
+.asg summary::-webkit-details-marker{display:none}.asg[open] summary{border-color:var(--green)}
+.asg-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;min-width:200px;box-shadow:0 12px 30px rgba(0,0,0,.25);display:grid;gap:2px}
+.asg-pop label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13.5px}.asg-pop label:hover{background:var(--surface-2)}
+.asg-pop input{accent-color:var(--green)}
+.cp-list{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.cp-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}.cp-top .t{font-weight:500}.cp-top b{font-size:13px}
+.cp-ed{display:flex;align-items:center;justify-content:space-between;margin-top:6px}.cp-ed input{width:110px;margin-left:6px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 8px}
+.cp-add{margin-top:16px;flex-wrap:wrap}.addrow.cp-add input#cpN{flex:0 0 110px}.addrow.cp-add input#cpU{flex:0 0 160px}
+@media (max-width:560px){.addrow.cp-add input{flex:1 1 100%!important}}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 230px);min-height:380px;padding:0;overflow:hidden}
+.ch-list{list-style:none;margin:0;padding:18px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.ch-day{text-align:center;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:8px 0}
+.ch-msg{display:flex;gap:8px;align-items:flex-end;max-width:78%}.ch-msg.me{align-self:flex-end;flex-direction:row-reverse}
+.ch-b{background:var(--surface-2);border-radius:14px 14px 14px 4px;padding:8px 12px}.ch-msg.me .ch-b{background:rgba(93,190,76,.18);border-radius:14px 14px 4px 14px}
+.ch-n{font-size:12px;font-weight:600;color:var(--green-text);margin-bottom:2px}.ch-t{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px}.ch-w{font-size:11px;color:var(--ink-3);margin-top:2px;text-align:right}
+.ch-form{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line)}
+.ch-form textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font:inherit;color:inherit;max-height:120px}
+@media (max-width:860px){.chat{height:calc(100vh - 290px)}}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -715,7 +735,7 @@ select.inline:disabled{cursor:default;opacity:.7}
 <div class="toast" id="toast"></div>
 
 <script id="kora-data" type="application/json">
-{"updated": "2026-11-20", "finanzasUrl": "https://claude.ai/artifact/7PnwXCN2PKY6egqUHbxnkL#finanzas", "supabase": {"url": "https://nyybceavqrgdcqpqqvsw.supabase.co", "key": "sb_publishable_vBMNIibgf4yBL0opgjAiCw_g8ngdbWK"}, "users": [{"id": "victor", "name": "Victor", "role": "Co-founder", "area": "dir", "color": "#F3CF4B"}, {"id": "luma", "name": "Luma", "role": "Co-founder", "area": "dir", "color": "#8FD3C1"}, {"id": "diego", "name": "Diego", "role": "Research & BI", "area": "research", "color": "#A7B8F0"}, {"id": "eduardo", "name": "Eduardo", "role": "Research & BI", "area": "research", "color": "#5DBE4C"}], "projects": [{"id": "g1", "owner": "victor", "area": "general", "title": "Lanzamiento oficial de la app", "status": "doing", "due": "2026-12-18", "example": false, "desc": "KORA sale oficialmente al público el 18 de diciembre. Todas las áreas aportan.", "ms": [["App lista para salir", 0], ["Pruebas finales con usuarios", 0], ["Campaña de lanzamiento", 0], ["Precios y oferta del primer mes listos", 1], ["Lanzamiento oficial · 18 dic", 0]], "links": [], "log": [], "goal": "Lanzar la app oficialmente el 18 de diciembre con todas las áreas listas."}, {"id": "p3", "owner": "eduardo", "area": "research", "title": "Inside KORA", "status": "doing", "due": "", "example": false, "desc": "Portal interno para que el equipo vea el avance de cada área y de toda la empresa.", "ms": [["Prompt de la iniciativa", 1], ["Mockup interactivo", 1], ["Unir el modelo financiero (Finanzas)", 1], ["Presentar a Victor y Luma", 1], ["Versión real en la web", 1], ["Compartir el link con el equipo", 0]], "links": [], "log": [["eduardo", "Inside KORA ya tiene su link para el equipo.", "2026-11-20T05:00:00Z"], ["eduardo", "Al equipo le gustó. Pasamos a la versión real en la web.", "2026-11-20T04:30:00Z"]], "goal": "Que todo el equipo vea en un solo lugar el avance de cada área y de la empresa, sin pagar por otra app interna."}, {"id": "p1", "owner": "eduardo", "area": "research", "title": "Precios Nicaragua y Costa Rica", "status": "review", "due": "", "example": false, "desc": "Propuesta de precios por país a partir del modelo de El Salvador. NI: Micro $3.99 / Pro $9.99. CR: Micro $8.99 / Pro $19.99. Cada dato lleva su fuente y si está verificado.", "ms": [["Investigar mercado de Nicaragua", 1], ["Investigar mercado de Costa Rica", 1], ["Proponer precios y ofertas", 1], ["Deck con fuentes y notas", 1], ["Guía PDF para presentar", 1], ["Verificar datos marcados como pendientes", 0], ["Validar con los co-founders", 0]], "links": [["Deck de precios NI y CR", "https://claude.ai/artifact/KsCghw1Ui4yTdBCaMUfv3q"]], "log": [], "goal": "Definir precios Micro y Pro para Nicaragua y Costa Rica, listos para validar con los co-founders y lanzar en esos mercados."}, {"id": "p2", "owner": "eduardo", "area": "research", "title": "Modelo financiero El Salvador", "status": "review", "due": "", "example": false, "desc": "Modelo interactivo de break-even, inversión necesaria, precios por plan, balance y liquidez. Está en la sección Finanzas.", "ms": [["Estructura del modelo", 1], ["Escenarios y tabla de sensibilidad", 1], ["Punto de equilibrio y runway", 1], ["Validar costos fijos reales", 0], ["Validar churn y conversión con datos de la app", 0]], "links": [["Modelo financiero (sección Finanzas)", "#finanzas"]], "log": [], "goal": "Saber cuánta inversión necesita KORA en El Salvador y en qué mes llega al punto de equilibrio."}, {"id": "p4", "owner": "diego", "area": "research", "title": "Precios El Salvador", "status": "done", "due": "", "example": false, "desc": "Precios base para El Salvador: Micro $5.99 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).", "ms": [["Market deck de El Salvador", 1], ["Deck de monetización", 1], ["Precios Micro y Pro", 1], ["Oferta del primer mes", 1]], "links": [], "log": [], "goal": "Fijar los precios base y la oferta de entrada para lanzar en El Salvador."}], "feed": [{"who": "eduardo", "text": "completó «Versión real en la web» en", "pid": "p3", "at": "2026-11-20T05:00:00Z"}, {"who": "eduardo", "text": "completó «Presentar a Victor y Luma» en", "pid": "p3", "at": "2026-11-19T20:00:00Z"}, {"who": "diego", "text": "completó", "pid": "p4", "at": "2026-11-16T18:00:00Z"}]}
+{"updated": "2026-11-20", "finanzasUrl": "https://claude.ai/artifact/7PnwXCN2PKY6egqUHbxnkL#finanzas", "supabase": {"url": "https://nyybceavqrgdcqpqqvsw.supabase.co", "key": "sb_publishable_vBMNIibgf4yBL0opgjAiCw_g8ngdbWK"}, "users": [{"id": "victor", "name": "Victor", "role": "Co-founder", "area": "dir", "color": "#F3CF4B"}, {"id": "luma", "name": "Luma", "role": "Co-founder", "area": "dir", "color": "#8FD3C1"}, {"id": "diego", "name": "Diego Molina", "role": "Research & BI", "area": "research", "color": "#A7B8F0"}, {"id": "eduardo", "name": "Eduardo", "role": "Research & BI", "area": "research", "color": "#5DBE4C"}], "projects": [{"id": "g1", "owner": "victor", "area": "general", "title": "Lanzamiento oficial de la app", "status": "doing", "due": "2026-12-21", "example": false, "desc": "KORA sale oficialmente al público el lunes 21 de diciembre en la App Store. Todas las áreas aportan.", "ms": [["App lista para salir", 0], ["Pruebas finales con usuarios", 0], ["Campaña de lanzamiento", 0], ["Precios y oferta del primer mes listos", 1], ["Lanzamiento oficial · 21 dic", 0]], "links": [], "log": [], "goal": "Lanzar la app oficialmente el lunes 21 de diciembre en la App Store con todas las áreas listas."}, {"id": "p3", "owner": "eduardo", "area": "research", "title": "Inside KORA", "status": "doing", "due": "", "example": false, "desc": "Portal interno para que el equipo vea el avance de cada área y de toda la empresa.", "ms": [["Prompt de la iniciativa", 1], ["Mockup interactivo", 1], ["Unir el modelo financiero (Finanzas)", 1], ["Presentar a Victor y Luma", 1], ["Versión real en la web", 1], ["Compartir el link con el equipo", 0]], "links": [], "log": [["eduardo", "Inside KORA ya tiene su link para el equipo.", "2026-11-20T05:00:00Z"], ["eduardo", "Al equipo le gustó. Pasamos a la versión real en la web.", "2026-11-20T04:30:00Z"]], "goal": "Que todo el equipo vea en un solo lugar el avance de cada área y de la empresa, sin pagar por otra app interna."}, {"id": "p1", "owner": "eduardo", "area": "research", "title": "Precios Nicaragua y Costa Rica", "status": "review", "due": "", "example": false, "desc": "Propuesta de precios por país a partir del modelo de El Salvador. NI: Micro $3.99 / Pro $9.99. CR: Micro $8.99 / Pro $19.99. Cada dato lleva su fuente y si está verificado.", "ms": [["Investigar mercado de Nicaragua", 1], ["Investigar mercado de Costa Rica", 1], ["Proponer precios y ofertas", 1], ["Deck con fuentes y notas", 1], ["Guía PDF para presentar", 1], ["Verificar datos marcados como pendientes", 0], ["Validar con los co-founders", 0]], "links": [["Deck de precios NI y CR", "https://claude.ai/artifact/KsCghw1Ui4yTdBCaMUfv3q"]], "log": [], "goal": "Definir precios Micro y Pro para Nicaragua y Costa Rica, listos para validar con los co-founders y lanzar en esos mercados."}, {"id": "p2", "owner": "eduardo", "area": "research", "title": "Modelo financiero El Salvador", "status": "review", "due": "", "example": false, "desc": "Modelo interactivo de break-even, inversión necesaria, precios por plan, balance y liquidez. Está en la sección Finanzas.", "ms": [["Estructura del modelo", 1], ["Escenarios y tabla de sensibilidad", 1], ["Punto de equilibrio y runway", 1], ["Validar costos fijos reales", 0], ["Validar churn y conversión con datos de la app", 0]], "links": [["Modelo financiero (sección Finanzas)", "#finanzas"]], "log": [], "goal": "Saber cuánta inversión necesita KORA en El Salvador y en qué mes llega al punto de equilibrio."}, {"id": "p4", "owner": "diego", "area": "research", "title": "Precios El Salvador", "status": "done", "due": "", "example": false, "desc": "Precios base para El Salvador: Micro $5.99 / Pro $14.99, con oferta del primer mes a $1 (Micro) y $5 (Pro).", "ms": [["Market deck de El Salvador", 1], ["Deck de monetización", 1], ["Precios Micro y Pro", 1], ["Oferta del primer mes", 1]], "links": [], "log": [], "goal": "Fijar los precios base y la oferta de entrada para lanzar en El Salvador."}], "feed": [{"who": "eduardo", "text": "completó «Versión real en la web» en", "pid": "p3", "at": "2026-11-20T05:00:00Z"}, {"who": "eduardo", "text": "completó «Presentar a Victor y Luma» en", "pid": "p3", "at": "2026-11-19T20:00:00Z"}, {"who": "diego", "text": "completó", "pid": "p4", "at": "2026-11-16T18:00:00Z"}]}
 </script>
 <script>
 (function(){
@@ -744,7 +764,7 @@ function seed(){
     users:[
       {id:"victor",name:"Victor",role:"Co-founder",area:"dir",color:"#F3CF4B"},
       {id:"luma",name:"Luma",role:"Co-founder",area:"dir",color:"#8FD3C1"},
-      {id:"diego",name:"Diego",role:"Research & BI",area:"research",color:"#A7B8F0"},
+      {id:"diego",name:"Diego Molina",role:"Research & BI",area:"research",color:"#A7B8F0"},
       {id:"eduardo",name:"Eduardo",role:"Research & BI",area:"research",color:"#5DBE4C"}
     ],
     projects:[
@@ -919,6 +939,8 @@ const ICON={
   team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M17.5 14a5 5 0 0 1 3 5"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
   money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l4-4 3 3 5-6"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18l-1.5 3.5L8 19.5c1.2.4 2.6.5 4 .5 5 0 8.5-3.4 8.5-8S17 4 12 4 3.5 7.4 3.5 12c0 2.4 1 4.5 2.6 6"/></svg>',
   cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
   proj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
@@ -930,6 +952,8 @@ function renderShell(){
   $("#nav").innerHTML=
     `<a href="#pulso" class="${h==="pulso"?"on":""}">${ICON.pulse}Pulso de KORA<span class="count num">${overallPct()}%</span></a>
      <a href="#team" class="${h==="team"?"on":""}">${ICON.team}Team</a>
+     ${AUTH&&acct&&myId()?`<a href="#tareas" class="${h==="tareas"?"on":""}">${ICON.check}Mis tareas<span class="count num">${myTasks().length||""}</span></a>`:""}
+     ${AUTH&&acct?`<a href="#chat" class="${h==="chat"?"on":""}">${ICON.chat}Chat del equipo<span class="count num">${chatUnread()||""}</span></a>`:""}
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
      ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
@@ -938,6 +962,7 @@ function renderShell(){
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
     genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
+    (doneProjects().length?`<a href="#completados" class="${h==="completados"?"on":""}"><span class="n">✓</span>Completados<span class="count num">${doneProjects().length}</span></a>`:"")+
     (canProj()?`<a href="#p/nuevo" class="addp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Nuevo proyecto</a>`:""))+
     (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
     (meetClosed?"":`<a href="#meetings" class="${h==="meetings"?"on":""}">${ICON.cal}Todas<span class="count num">${upcoming().length||""}</span></a>`+
@@ -953,7 +978,7 @@ function renderShell(){
     :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>${AUTH?'<button class="linkbtn" data-act="login">Entrar o crear cuenta</button>':""}`;
   $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:acct?av({name:acct.name||acct.email,color:"#5DBE4C"},"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:AUTH?`<span style="font-size:13px;color:var(--ink-2)">Entrar</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
   const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
-  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+tab("proyectos","Proyectos",ICON.proj)+tab("team","Team",ICON.team)+(AUTH&&acct?tab("meetings","Meetings",ICON.cal):"")+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
+  $("#tabbar").innerHTML=tab("pulso","Pulso",ICON.pulse)+tab("proyectos","Proyectos",ICON.proj)+tab("team","Team",ICON.team)+(AUTH&&acct&&myId()?tab("tareas","Tareas",ICON.check):"")+(AUTH&&acct?tab("chat","Chat",ICON.chat):"")+(AUTH&&acct?tab("meetings","Meetings",ICON.cal):"")+AREA_KEYS.map(k=>tab(k,k==="growth"?"Growth":k==="research"?"Research":"Biz Dev",`<span style="font-family:var(--f-display);font-weight:600;font-size:14px;line-height:20px">${AREAS[k].n}</span>`)).join("")+(isAdmin()?tab("equipo","Equipo",ICON.team):"")+(acctAdmin()?tab("cuentas","Cuentas",ICON.team):"")+tab("finanzas","Finanzas",ICON.money);
   let b=$("#demoBanner");
   if(false&&!b){b=document.createElement("div");b.id="demoBanner";b.className="demo-banner";b.innerHTML="<b>Modo demo.</b> Los cambios se guardan solo en este navegador. Para el link real, conecta la base de datos (ver la guía).";$("#view").before(b)}
 }
@@ -1068,11 +1093,11 @@ function viewPulso(){
   </div>`;
 }
 function filterBar(){
-  const opts=[["all","Todos"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"],["done","Completado"]];
+  const opts=[["all","Todos"],["todo","Por iniciar"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"]];
   return `<div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>`;
 }
 function viewArea(k){
-  const A=AREAS[k],ps=S.projects.filter(p=>p.area===k);
+  const A=AREAS[k],ps=S.projects.filter(p=>p.area===k&&!isDone(p)),nDone=S.projects.filter(p=>p.area===k&&isDone(p)).length;
   const ids=[...new Set(S.users.filter(u=>u.area===k).map(u=>u.id).concat(ps.map(p=>p.owner)))].filter(Boolean);
   const loose=ps.filter(p=>!p.owner);
   const vis=p=>filter==="all"||p.status===filter;
@@ -1082,23 +1107,61 @@ function viewArea(k){
       <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="color:var(--olive-ink-2);font-size:13.5px">${ids.length} persona${ids.length===1?"":"s"} · ${ps.length} proyecto${ps.length===1?"":"s"}</span></div></div>
     <div class="ring" style="--p:${areaPct(k)};--size:120px"><div><div><b class="num">${areaPct(k)}%</b><br><span>AVANCE</span></div></div></div>
   </div>
-  <div class="page-head">${filterBar()}${canProj()?`<a class="btn sm" href="#p/nuevo/${k}" style="text-decoration:none">+ Nuevo proyecto</a>`:""}</div>
+  <div class="page-head">${filterBar()}<div style="display:flex;gap:8px;align-items:center">${nDone?`<a class="btn ghost sm" href="#completados" style="text-decoration:none">✓ ${nDone} completado${nDone===1?"":"s"}</a>`:""}${canProj()?`<a class="btn sm" href="#p/nuevo/${k}" style="text-decoration:none">+ Nuevo proyecto</a>`:""}</div></div>
   <div class="members">${ids.length?ids.map(id=>{const u=user(id);const mine=ps.filter(p=>p.owner===id);const shown=mine.filter(vis);
     const avg=mine.length?Math.round(mine.reduce((s,p)=>s+pct(p),0)/mine.length):0;
     return `<section class="member"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)}</div></div>
       <span class="sum num">${mine.length} proyecto${mine.length===1?"":"s"} · ${avg}%</span></div>
       ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,false)).join("")}</div>`:`<div class="empty">${mine.length?"Ningún proyecto con este estado.":"Todavía no tiene proyectos en esta área."}</div>`}</section>`}).join(""):'<div class="empty">Nadie registrado en esta área todavía.</div>'}</div>${loose.length?`<section class="member" style="margin-top:20px"><div class="member-head"><div><div class="nm">Sin responsable</div><div class="rl">Proyectos del área sin persona asignada</div></div></div><div class="proj-grid">${loose.filter(vis).map(p=>projCard(p,false)).join("")}</div></section>`:""}`;
 }
-const LAUNCH=new Date("2026-12-18T00:00:00-06:00");
-const genProjects=()=>S.projects.filter(p=>p.area==="general");
+const LAUNCH=new Date("2026-12-21T00:00:00-06:00");
+const isDone=p=>p.status==="done";
+const genProjects=()=>S.projects.filter(p=>p.area==="general"&&!isDone(p));
+const doneProjects=()=>S.projects.filter(isDone);
+const asg=m=>Array.isArray(m[2])?m[2].filter(Boolean):(m[2]?[m[2]]:[]);
+const myId=()=>acct&&acct.member||"";
+function myTasks(){const me=myId();if(!me)return[];const out=[];
+  S.projects.filter(p=>p._db&&!isDone(p)).forEach(p=>p.ms.forEach((m,i)=>{if(m[1])return;const a=asg(m);if(a.includes(me)||(!a.length&&p.owner===me))out.push({p,m,i})}));return out}
+const cpPct=c=>c.target>0?Math.max(0,Math.min(100,Math.round(c.cur/c.target*100))):0;
+const fmtN=n=>Number(n||0).toLocaleString("es");
 const dbProj=id=>(GEN||[]).find(p=>p.id===id);
 function cdParts(){const ms=Math.max(0,LAUNCH-Date.now());return{d:Math.floor(ms/864e5),h:Math.floor(ms/36e5)%24,m:Math.floor(ms/6e4)%60,s:Math.floor(ms/1e3)%60,done:ms<=0}}
 function countdownPanel(){const c=cdParts();const g=genProjects().find(p=>/lanzamiento/i.test(p.title));
   return `<a class="panel countdown" href="${g?"#p/"+esc(g.id):"#proyectos"}">
-    <div class="cd-txt"><div class="eyebrow">Lanzamiento oficial</div><h2>${c.done?"¡KORA ya salió!":"Faltan para el lanzamiento"}</h2><p>18 de diciembre de 2026</p></div>
+    <div class="cd-txt"><div class="eyebrow">Lanzamiento oficial</div><h2>${c.done?"¡KORA ya salió!":"Faltan para el lanzamiento"}</h2><p>Lunes 21 de diciembre de 2026 · App Store</p></div>
     <div class="cd-nums" id="cdNums">${cdHTML(c)}</div></a>`}
 function cdHTML(c){return [["d","días"],["h","horas"],["m","min"],["s","seg"]].map(([k,l])=>`<div class="cd-box"><b class="num">${String(c[k]).padStart(2,"0")}</b><span>${l}</span></div>`).join("")}
 setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHTML(cdParts())},1000);
+/* ---------- Mis tareas ---------- */
+function viewTasks(){const me=myId(),ts=myTasks();const by={};ts.forEach(t=>{(by[t.p.id]=by[t.p.id]||{p:t.p,items:[]}).items.push(t)});
+  return `<div class="page-head"><div><div class="eyebrow">${esc(user(me).name)}</div><h1>Mis tareas</h1><p>Todo lo que tienes pendiente en todos los proyectos.</p></div><span class="hint num">${ts.length} pendiente${ts.length===1?"":"s"}</span></div>
+  ${ts.length?Object.values(by).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a></h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
+    <ul class="gp-ms">${g.items.map(t=>`<li><input type="checkbox" data-tk="${esc(t.p.id)}:${t.i}" aria-label="Marcar como hecha"><span class="t">${esc(t.m[0])}</span>${asg(t.m).length>1?`<span class="stack">${asg(t.m).map(id=>av(user(id),"sm")).join("")}</span>`:""}</li>`).join("")}</ul></section>`).join("")
+  :'<div class="empty">No tienes tareas pendientes. 🎉</div>'}`}
+function bindTasks(){$("#view").querySelectorAll("[data-tk]").forEach(c=>c.onchange=async()=>{const [pid,i]=c.dataset.tk.split(":");const p=dbProj(pid),m=p&&p.ms[+i];if(!m)return;m[1]=1;
+  if(p.ms.every(x=>x[1]))p.status="done";else if(p.status==="todo")p.status="doing";route();await saveGen(p,`completó «${m[0]}» en`)})}
+/* ---------- Chat del equipo (Supabase: chat) ---------- */
+let CHAT=[],chatReady=false,chatSeen=0;try{chatSeen=+localStorage.getItem("ik-chat-seen")||0}catch(_){}
+const chatUnread=()=>location.hash==="#chat"?0:CHAT.filter(c=>new Date(c.at).getTime()>chatSeen&&c.user_id!==(acct&&acct.user_id)).length;
+function markChatSeen(){chatSeen=Date.now();try{localStorage.setItem("ik-chat-seen",String(chatSeen))}catch(_){}}
+async function loadChat(){if(!AUTH||!acct)return;try{const r=await AUTH.from("chat").select("id,at,user_id,who,body").order("at",{ascending:false}).limit(200);if(r.error)throw r.error;CHAT=r.data.reverse();chatReady=true;
+  AUTH.channel("chat").on("postgres_changes",{event:"INSERT",schema:"public",table:"chat"},m=>{if(CHAT.some(c=>c.id===m.new.id))return;CHAT.push(m.new);
+    if(location.hash==="#chat"){markChatSeen();renderChatList(true)}else{renderShell();if(m.new.user_id!==acct.user_id)toast((m.new.who||"Alguien")+": "+String(m.new.body).slice(0,60))}}).subscribe()}catch(e){console.warn("chat",e);chatReady=false}}
+const chatUser=c=>S.users.find(x=>(x.name||"").toLowerCase()===(c.who||"").toLowerCase())||teamUsers().find(x=>(x.name||"").toLowerCase()===(c.who||"").toLowerCase())||{name:c.who||"Alguien",color:"#5DBE4C"};
+function chatItems(){let last="";return CHAT.map(c=>{const mine=c.user_id===(acct&&acct.user_id),d=new Date(c.at).toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long"});
+  const sep=d!==last?`<li class="ch-day">${esc(d)}</li>`:"";last=d;const u=chatUser(c);
+  return sep+`<li class="ch-msg ${mine?"me":""}">${mine?"":av(u,"sm")}<div class="ch-b">${mine?"":`<div class="ch-n">${esc(u.name)}</div>`}<div class="ch-t">${esc(c.body)}</div><div class="ch-w">${new Date(c.at).toLocaleTimeString("es",{hour:"numeric",minute:"2-digit"})}</div></div></li>`}).join("")}
+function renderChatList(scroll){const l=document.getElementById("chList");if(!l)return;l.innerHTML=chatItems()||'<li class="hint" style="text-align:center;padding:30px">Todavía no hay mensajes. Escribe el primero.</li>';if(scroll)l.scrollTop=l.scrollHeight}
+function viewChat(){markChatSeen();
+  if(!chatReady)return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Chat del equipo</h1></div></div><div class="empty">El chat se activa cuando Eduardo corre el SQL del chat.</div>`;
+  return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Chat del equipo</h1><p>Un solo chat para todo el equipo.</p></div></div>
+  <section class="panel chat"><ul class="ch-list" id="chList"></ul>
+  <form class="ch-form" id="chF"><textarea id="chIn" rows="1" maxlength="2000" placeholder="Escribe un mensaje…" required></textarea><button class="btn" type="submit">Enviar</button></form></section>`}
+function bindChat(){if(!chatReady)return;renderChatList(true);renderShell();const ta=$("#chIn");ta.focus();
+  ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#chF").requestSubmit()}};
+  $("#chF").onsubmit=async e=>{e.preventDefault();const body=ta.value.trim();if(!body)return;ta.value="";
+    const r=await AUTH.from("chat").insert({body}).select("id,at,user_id,who,body").single();
+    if(r.error){toast("No se pudo enviar");ta.value=body;return}if(!CHAT.some(c=>c.id===r.data.id))CHAT.push(r.data);markChatSeen();renderChatList(true)}}
 /* ---------- Meetings por área y por proyecto (Supabase: meetings) ---------- */
 let MEET=[], meetReady=false, mtEditing=false;
 let meetClosed=false;try{meetClosed=!!localStorage.getItem("ik-mclosed")}catch(_){}
@@ -1192,6 +1255,8 @@ async function loadGen(){if(!AUTH||!acct)return;
       for(const p of seed){const {id,...d}=p;await AUTH.from("gen_projects").insert({id,data:{...d,ms:d.ms.map(m=>[m[0],m[1],m[2]||""]),_act:""}})}
       await AUTH.from("gen_projects").upsert({id:"_meta",data:{seeded:[...new Set([...done,...STATIC.projects.map(p=>p.id)])],_act:""}});
       g=await fetchGen();}
+    for(const p of g){if(p.id==="g1"&&p.due==="2026-12-18"){const f=t=>typeof t==="string"?t.replace("el 18 de diciembre","el lunes 21 de diciembre en la App Store").replace("18 dic","21 dic"):t;
+      p.due="2026-12-21";p.desc=f(p.desc);p.goal=f(p.goal);p.ms=p.ms.map(m=>[f(m[0]),...m.slice(1)]);saveGen(p,"cambió la fecha de lanzamiento al lunes 21 de diciembre en")}}
     for(const p of g){if(typeof p.desc==="string"&&p.desc.includes("Micro $5.55")){p.desc=p.desc.replace("Micro $5.55","Micro $5.99");saveGen(p,"actualizó el precio Micro de El Salvador a $5.99 en")}}
     for(const p of g){if(p.goal===undefined){const st=STATIC.projects.find(x=>x.id===p.id);if(st&&st.goal){p.goal=st.goal;saveGen(p,"")}}}
     GEN=g;setProjects(STATIC.projects);
@@ -1208,9 +1273,14 @@ async function saveGen(p,act){
   return true}
 const respSel=(val,attrs)=>`<select class="inline resp" ${attrs}><option value="">Sin responsable</option>${teamUsers().concat(val&&!teamUsers().some(u=>u.id===val)?[user(val)]:[]).map(u=>`<option value="${esc(u.id)}" ${val===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select>`;
 function daysTo(d){if(!d)return null;return Math.ceil((new Date(d+"T00:00:00-06:00")-Date.now())/864e5)}
+document.addEventListener("click",e=>{document.querySelectorAll("details.asg[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})});
+function asgBox(i,arr,ed,p){const av_=arr.length?`<span class="stack">${arr.map(id=>av(user(id),"sm")).join("")}</span>`:`<span class="hint">${p.owner?esc(user(p.owner).name.split(" ")[0]):"Asignar"}</span>`;
+  if(!ed)return `<span class="who">${av_}</span>`;
+  const opts=teamUsers().concat(arr.filter(id=>!teamUsers().some(u=>u.id===id)).map(user));
+  return `<details class="asg"><summary title="Asignar personas">${av_}</summary><div class="asg-pop">${opts.length?opts.map(u=>`<label><input type="checkbox" data-asg="${i}" value="${esc(u.id)}" ${arr.includes(u.id)?"checked":""}>${av(u,"sm")}${esc(u.name)}</label>`).join(""):'<span class="hint">Nadie en Team todavía</span>'}</div></details>`}
 function viewGenProject(id){
-  const p=dbProj(id),ed=canProj(),perHito=p.area==="general",v=pct(p),dl=daysTo(p.due);
-  const people=[...new Set(p.ms.map(m=>m[2]).filter(Boolean))];
+  const p=dbProj(id),ed=canProj(),perHito=p.area==="general",v=pct(p),dl=daysTo(p.due),cps=p.cps||[];
+  const people=[...new Set(p.ms.flatMap(asg))];
   return `
   <div class="area-hero">
     <div><span class="n">${AREAS[p.area]?`<a href="#${p.area}" style="color:inherit;text-decoration:none">${AREAS[p.area].n} · ${esc(AREAS[p.area].name)}</a>`:"Proyecto general · toda la empresa"}${p.owner?" · Responsable: "+esc(user(p.owner).name):""}</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>${p.goal?`<div class="goal-hero"><span>Objetivo</span>${esc(p.goal)}</div>`:""}
@@ -1232,14 +1302,21 @@ function viewGenProject(id){
     <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
   </form>`:`<div style="height:16px"></div>`}
   <section class="panel">
-    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">${perHito?"Responsable por hito":p.owner?"Responsable: "+esc(user(p.owner).name):""}</span></div>
+    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">${p.owner?"Responsable del proyecto: "+esc(user(p.owner).name):"Cada hito, una o varias personas"}</span></div>
     <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}" ${ed?`draggable="true" data-gi="${i}"`:""}>
       ${ed?`<span class="grip" title="Arrastra para mover" aria-hidden="true">⋮⋮</span>`:""}
       <input type="checkbox" data-gms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"} aria-label="Completado">
       <span class="t">${esc(m[0])}</span>
-      ${!perHito?"":ed?respSel(m[2]||"",`data-gresp="${i}"`):(m[2]?`<span class="who">${av(user(m[2]),"sm")}${esc(user(m[2]).name)}</span>`:'<span class="who hint">Sin responsable</span>')}
+      ${asgBox(i,asg(m),ed,p)}
       ${ed?`<span class="mv"><button type="button" class="iconbtn" data-gup="${i}" ${i===0?"disabled":""} title="Subir" aria-label="Subir hito">↑</button><button type="button" class="iconbtn" data-gdn="${i}" ${i===p.ms.length-1?"disabled":""} title="Bajar" aria-label="Bajar hito">↓</button></span><button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
-    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${perHito?respSel("",'id="gpMsR"'):""}<button class="btn sm" type="submit">Agregar</button></form>`:""}
+    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${respSel("",'id="gpMsR"')}<button class="btn sm" type="submit">Agregar</button></form>`:""}
+  </section>
+  <section class="panel" style="margin-top:16px">
+    <div class="section-title"><h2>Checkpoints</h2><span class="eyebrow">Metas medibles del proyecto</span></div>
+    ${cps.length?`<ul class="cp-list">${cps.map((c,i)=>`<li><div class="cp-top"><span class="t">${cpPct(c)>=100?"✓ ":""}${esc(c.t)}</span><b class="num">${fmtN(c.cur)} / ${fmtN(c.target)}${c.unit?" "+esc(c.unit):""} · ${cpPct(c)}%</b></div>
+      <div class="track ${cpPct(c)>=100?"":"gold"}"><i style="width:${cpPct(c)}%"></i></div>
+      ${ed?`<div class="cp-ed"><label class="hint">Vamos en <input type="number" step="any" min="0" data-cpv="${i}" value="${esc(String(c.cur))}"></label><button type="button" class="iconbtn" data-cpdel="${i}" title="Quitar checkpoint" aria-label="Quitar checkpoint">×</button></div>`:""}</li>`).join("")}</ul>`:'<div class="hint">Todavía no hay checkpoints. Ej. «Llegar a 250 personas».</div>'}
+    ${ed?`<form class="addrow cp-add" id="cpAdd"><input id="cpT" placeholder="Checkpoint (ej. Llegar a 250 personas)" maxlength="80" required><input id="cpN" type="number" min="1" step="any" placeholder="Meta" required><input id="cpU" placeholder="Unidad (personas, $…)" maxlength="20"><button class="btn sm" type="submit">Agregar</button></form>`:""}
   </section>
   ${(p.links||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Entregables y links</h2></div><div class="links">${p.links.map(l=>{const u=safeUrl(l[1])||(String(l[1]||"").startsWith("#")?l[1]:"");return u?`<a href="${esc(u)}" ${u.startsWith("#")?"":'target="_blank" rel="noopener"'}>${esc(l[0])} ↗</a>`:`<span>${esc(l[0])}</span>`}).join("")}</div></section>`:""}
   ${(p.log||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Actualizaciones</h2></div><div class="log">${p.log.map(l=>`<div class="it">${av(user(l[0]),"sm")}<div><div>${esc(l[1])}</div><div class="when">${esc(user(l[0]).name)} · ${ago(l[2])}</div></div></div>`).join("")}</div></section>`:""}`}
@@ -1248,7 +1325,12 @@ function bindGenProject(id){if(!canProj())return;
   const commit=async(act)=>{const p=get();if(p.ms.length&&p.ms.every(m=>m[1])&&p.status!=="done"){p.status="done"}else if(p.status==="done"&&p.ms.some(m=>!m[1]))p.status="doing";else if(p.status==="todo"&&p.ms.some(m=>m[1]))p.status="doing";
     route();await saveGen(p,act)};
   $("#view").querySelectorAll("[data-gms]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gms];m[1]=c.checked?1:0;commit(c.checked?`completó «${m[0]}» en`:`reabrió «${m[0]}» en`)});
-  $("#view").querySelectorAll("[data-gresp]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.gresp];m[2]=c.value;commit(c.value?`asignó «${m[0]}» a ${user(c.value).name} en`:`quitó el responsable de «${m[0]}» en`)});
+  $("#view").querySelectorAll("[data-asg]").forEach(c=>c.onchange=()=>{const p=get(),m=p.ms[+c.dataset.asg];let a=asg(m);a=c.checked?[...new Set(a.concat(c.value))]:a.filter(x=>x!==c.value);m[2]=a;
+    const box=c.closest("details");const keep=box&&box.open;commit(c.checked?`asignó «${m[0]}» a ${user(c.value).name} en`:`quitó a ${user(c.value).name} de «${m[0]}» en`).then(()=>{if(keep){const d=$("#view").querySelectorAll("details.asg")[+c.dataset.asg];if(d)d.open=true}})});
+  $("#view").querySelectorAll("[data-cpv]").forEach(c=>c.onchange=()=>{const p=get(),cp=p.cps[+c.dataset.cpv];const was=cpPct(cp);cp.cur=Math.max(0,+c.value||0);
+    route();saveGen(p,cpPct(cp)>=100&&was<100?`llegó al checkpoint «${cp.t}» en`:`actualizó el checkpoint «${cp.t}» a ${fmtN(cp.cur)}/${fmtN(cp.target)} en`)});
+  $("#view").querySelectorAll("[data-cpdel]").forEach(b=>b.onclick=()=>{const p=get(),cp=p.cps.splice(+b.dataset.cpdel,1)[0];route();saveGen(p,`quitó el checkpoint «${cp.t}» de`)});
+  $("#cpAdd").onsubmit=e=>{e.preventDefault();const p=get();p.cps=p.cps||[];const c={t:$("#cpT").value.trim(),target:+$("#cpN").value,cur:0,unit:$("#cpU").value.trim()};if(!c.t||!(c.target>0))return;p.cps.push(c);route();saveGen(p,`agregó el checkpoint «${c.t}» en`)};
   const move=(a,b)=>{const p=get();if(b<0||b>=p.ms.length||a===b)return;const [m]=p.ms.splice(a,1);p.ms.splice(b,0,m);route();saveGen(p,"")};
   $("#view").querySelectorAll("[data-gup]").forEach(b=>b.onclick=()=>move(+b.dataset.gup,+b.dataset.gup-1));
   $("#view").querySelectorAll("[data-gdn]").forEach(b=>b.onclick=()=>move(+b.dataset.gdn,+b.dataset.gdn+1));
@@ -1261,7 +1343,7 @@ function bindGenProject(id){if(!canProj())return;
     li.addEventListener("drop",e=>{e.preventDefault();const to=+li.dataset.gi;const from=dragI;dragI=null;move(from,to)});
   });
   $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el hito «${m[0]}» de`)});
-  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR")?$("#gpMsR").value:""]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
+  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR")&&$("#gpMsR").value?[$("#gpMsR").value]:[]]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
@@ -1285,6 +1367,9 @@ function bindNewProject(){$("#npT").focus();$("#npA").onchange=()=>{$("#npOw").h
   const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npA").value==="general"?$("#npO").value:((acct&&acct.member)||$("#npO").value),title:$("#npT").value.trim(),desc:$("#npD").value.trim(),goal:$("#npG").value.trim(),due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
   GEN=(GEN||[]).concat([p]);setProjects(STATIC.projects);
   if(await saveGen(p,"creó el proyecto"))location.hash="p/"+p.id;else b.disabled=false}}
+function viewDone(){const ps=doneProjects();const groups=[["general","Proyectos generales"],...AREA_KEYS.map(k=>[k,AREAS[k].name])];
+  return `<div class="page-head"><div><div class="eyebrow">Archivo</div><h1>Completados</h1><p>Los proyectos terminados salen de la vista principal y quedan aquí. Para reabrir uno, entra y cambia su estado.</p></div></div>
+  ${ps.length?groups.map(([k,l])=>{const g=ps.filter(p=>p.area===k);return g.length?`<section class="member" style="margin-bottom:22px"><div class="member-head"><div><div class="nm">${esc(l)}</div><div class="rl">${g.length} completado${g.length===1?"":"s"}</div></div></div><div class="proj-grid">${g.map(p=>projCard(p,true)).join("")}</div></section>`:""}).join(""):'<div class="empty">Todavía no hay proyectos completados.</div>'}`}
 function viewProjects(){const ps=genProjects();const vis=p=>filter==="all"||p.status===filter;const shown=ps.filter(vis);
   return `<div class="page-head"><div><div class="eyebrow">Toda la empresa</div><h1>Proyectos</h1>
     <p>Los proyectos grandes de KORA, en los que trabajan todas las áreas.</p></div>
@@ -1297,7 +1382,7 @@ function viewPeople(){
   return `<div class="page-head"><div><div class="eyebrow">Inside KORA</div><h1>Team</h1>
     <p>Quién está en KORA y en qué está trabajando ahora.</p></div></div>
   ${TEAM===null?'<div class="empty">Cargando el equipo…</div>':!TEAM.length?'<div class="empty">Todavía nadie ha entrado al portal. Cuando cada persona cree su cuenta y Eduardo la apruebe, aparece aquí.</div>':""}
-  <div class="people">${teamUsers().map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p._db&&p.ms.some(m=>m[2]===u.id&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
+  <div class="people">${teamUsers().map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p._db&&p.ms.some(m=>asg(m).includes(u.id)&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
     return `<section class="panel person-card"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role.includes(areaName(u.area))?u.role:u.role+" · "+areaName(u.area))}</div></div>
       <span class="sum num">${now.length} en marcha${done?` · ${done} listo${done===1?"":"s"}`:""}</span></div>
       ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button ${p._db?`onclick="location.hash='p/${esc(p.id)}'"`:`data-act="open" data-id="${esc(p.id)}"`}><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
@@ -1409,6 +1494,9 @@ function route(){
   if(AREAS[h])v.innerHTML=viewArea(h);
   else if(h=="meetings"||h==="meetings/nuevo"){v.innerHTML=meetingsSection();bindMeetings(h==="meetings/nuevo")}
   else if(h==="proyectos")v.innerHTML=viewProjects();
+  else if(h==="completados")v.innerHTML=viewDone();
+  else if(h==="tareas"){v.innerHTML=viewTasks();bindTasks()}
+  else if(h==="chat"){v.innerHTML=viewChat();bindChat()}
   else if(h.startsWith("p/nuevo")&&canProj()){const ar=h.split("/")[2]||"general";v.innerHTML=viewNewProject(ar);bindNewProject()}
   else if(h.startsWith("p/")&&dbProj(h.slice(2))){v.innerHTML=viewGenProject(h.slice(2));bindGenProject(h.slice(2))}
   else if(h==="team")v.innerHTML=viewPeople();
@@ -1550,7 +1638,7 @@ async function boot(){
   if(!AUTH)try{await resolveRole()}catch(e){console.error(e)}
   try{await fetchAll()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">No se pudo conectar con la base de datos. Revisa tu internet y recarga la página.</div>';renderShell();return}
   if(!location.hash)history.replaceState(null,"","#pulso");
-  await Promise.all([loadGen(),loadTeam(),loadMeetings()]);
+  await Promise.all([loadGen(),loadTeam(),loadMeetings(),loadChat()]);
   route();live();startActivity();
   let later=false;try{later=!!sessionStorage.getItem("ik-claim-later")}catch(_){}
   if(AUTH&&acct&&!acct.member&&TEAM!==null&&!later)setTimeout(openClaim,400);

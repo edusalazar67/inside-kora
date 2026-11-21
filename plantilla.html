@@ -219,6 +219,7 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 @media (max-width:860px){.chat{height:calc(100vh - 290px)}}
 .proj .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;max-width:100%}
 .prio{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.prio-sel{cursor:pointer;position:relative}.prio-sel select{all:unset;field-sizing:content;cursor:pointer;color:inherit;font:inherit}.prio-sel select option{color:#111;background:#fff}.prio-sel span{font-size:10px;opacity:.8}.prio-sel:focus-within{outline:2px solid currentColor;outline-offset:2px}
 .prio::before,.dot{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor}
 .prio-alta{color:#E5806B}.prio.prio-alta{background:rgba(229,128,107,.15)}
 .prio-media{color:#E9B949}.prio.prio-media{background:rgba(233,185,73,.15)}
@@ -327,6 +328,10 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .ms input{accent-color:var(--green);width:17px;height:17px;margin-top:2px;flex:none}
 .ms .done span{color:var(--ink-3);text-decoration:line-through}
 .addrow{display:flex;gap:8px}
+.avbtn{all:unset;cursor:pointer;border-radius:50%;display:inline-flex}.avbtn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.avpal{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.avpal button{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}.avpal button.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px currentColor;color:#fff}
+#nav .nav-bottom{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.addrow .auto-own{align-self:center;white-space:nowrap;padding:0 6px;font-size:13px}
 .addrow input,.field input,.field select,.field textarea,select.inline{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px}
 .links a{display:flex;gap:8px;align-items:center;color:var(--green-text);text-decoration:none;font-weight:500;font-size:14px;padding:4px 0;overflow-wrap:anywhere}
 .links a:hover{text-decoration:underline}
@@ -806,7 +811,9 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const user=id=>S.users.find(u=>u.id===id)||(TEAM||[]).map(teamUser).find(u=>u.id===id)||{name:"?",role:"",color:"#999",id};
 const initials=n=>String(n||"?").trim().split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
-const av=(u,cls="")=>`<span class="av ${cls}" style="--c:${esc(u.color)};background:${esc(u.color)}" title="${esc(u.name)}">${esc(initials(u.name))}</span>`;
+let UCOL={},colorOpen=false;const AVC=["#5DBE4C","#2F9E6B","#4A90D9","#7B6CF6","#B05CD6","#E05C8A","#E5806B","#E9A23B","#C9B037","#6B7A8F"];
+const ucol=u=>(u&&u.id&&UCOL[u.id])||u.color;
+const av=(u,cls="")=>`<span class="av ${cls}" style="--c:${esc(ucol(u))};background:${esc(ucol(u))}" title="${esc(u.name)}">${esc(initials(u.name))}</span>`;
 const pct=p=>{if(p.status==="done")return 100;if(!p.ms.length)return p.status==="todo"?0:p.status==="review"?80:30;return Math.round(p.ms.filter(m=>m[1]).length/p.ms.length*100)};
 const areaPct=a=>{const ps=S.projects.filter(p=>p.area===a);return ps.length?Math.round(ps.reduce((s,p)=>s+pct(p),0)/ps.length):0};
 const overallPct=()=>S.projects.length?Math.round(S.projects.reduce((s,p)=>s+pct(p),0)/S.projects.length):0;
@@ -901,7 +908,7 @@ function whoData(px){const m=$("#"+px+"M").value;
   if(m==="otro"){const n=$("#"+px+"N").value.trim();return{name:n,member:"x-"+n.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"").slice(0,20)+"-"+Math.random().toString(36).slice(2,6),area:$("#"+px+"A").value}}
   const u=S.users.find(x=>x.id===m);return{name:u?u.name:"",member:m,area:u?u.area:""}}
 function openClaim(){
-  $("#modal").innerHTML=`<form id="clF"><h2>¿Quién eres?</h2><p class="hint">Así sales en Team y te pueden asignar hitos. Solo se pregunta una vez.</p>
+  $("#modal").innerHTML=`<form id="clF"><h2>¿Quién eres?</h2><p class="hint">Así sales en Team y te pueden asignar steps. Solo se pregunta una vez.</p>
     ${whoFields("cl")}<div class="lockerr" id="clErr" role="alert"></div>
     <div class="actions" style="justify-content:flex-end"><button type="button" class="btn ghost" id="clX">Después</button><button class="btn" type="submit">Listo</button></div></form>`;
   $("#modal").classList.add("on");$("#scrim").classList.add("on");bindWho("cl");
@@ -965,7 +972,6 @@ function renderShell(){
      ${AUTH&&acct?`<a href="#chat" class="${h==="chat"?"on":""}">${ICON.chat}Chat del equipo<span class="count num">${chatUnread()||""}</span></a>`:""}
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
      ${canProj()?`<a href="#p/nuevo" class="newbtn">+ Crear proyecto</a>`:""}
-     ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
      <div class="label">Áreas</div>`+
     AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("")+
@@ -978,14 +984,15 @@ function renderShell(){
     (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
     (meetClosed?"":`<a href="#meetings" class="${h==="meetings"?"on":""}">${ICON.cal}Todas<span class="count num">${upcoming().length||""}</span></a>`+
     upcoming().slice(0,3).map(m=>`<a href="#meetings" class="mt-nav"><span class="n">${esc(new Date(m.at).toLocaleDateString("es",{day:"numeric",month:"short"}).replace(".",""))}</span><span class="ell">${esc(m.title)}</span></a>`).join("")+
-    (canMeet()?`<a href="#meetings/nuevo" class="addp ${h==="meetings/nuevo"?"on":""}"><span class="n">+</span>Agendar meeting</a>`:"")):"");
+    (canMeet()?`<a href="#meetings/nuevo" class="addp ${h==="meetings/nuevo"?"on":""}"><span class="n">+</span>Agendar meeting</a>`:"")):"")+
+    (acctAdmin()?`<a href="#cuentas" class="nav-bottom ${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:"");
   const u=me?user(me):null;
   $("#me").innerHTML=isAdmin()
     ?`<div class="row">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">Editor · puedes cambiar todo</div></div></div><button class="linkbtn" data-act="logout">Salir del modo editor</button>`
     :role==="fin"
     ?`<div class="row"><span class="av" style="background:var(--green)">${ICON.lock}</span><div><div class="nm">Finanzas abierta</div><div class="rl">Solo lectura</div></div></div><button class="linkbtn" data-act="logout">Cerrar finanzas</button>`
     :acct
-    ?`<div class="row">${av({name:acct.name||acct.email,color:"#5DBE4C"})}<div><div class="nm">${esc(acct.name||acct.email)}</div><div class="rl">${esc(ROLE_LBL[acct.role]||acct.role)}</div></div></div><button class="linkbtn" data-act="logout">Salir</button>`
+    ?`<div class="row">${myId()?`<button type="button" class="avbtn" data-act="colortoggle" title="Cambiar color" aria-label="Cambiar color de tu perfil">${av({id:myId(),name:acct.name||acct.email,color:"#5DBE4C"})}</button>`:av({name:acct.name||acct.email,color:"#5DBE4C"})}<div><div class="nm">${esc(acct.name||acct.email)}</div><div class="rl">${esc(ROLE_LBL[acct.role]||acct.role)}</div></div></div>${colorOpen&&myId()?`<div class="avpal" role="group" aria-label="Color de tu perfil">${AVC.map(c=>`<button type="button" data-act="setcolor" data-c="${c}" style="background:${c}" class="${ucol({id:myId(),color:"#5DBE4C"})===c?"on":""}" aria-label="Color ${c}"></button>`).join("")}</div>`:""}<button class="linkbtn" data-act="logout">Salir</button>`
     :`<div><div class="nm">Vista del equipo</div><div class="rl">Actualizado ${esc(fmtDate(STATIC.updated))}</div></div>${AUTH?'<button class="linkbtn" data-act="login">Entrar o crear cuenta</button>':""}`;
   $("#mUser").innerHTML=isAdmin()?av(u,"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:role==="fin"?`<span style="font-size:13px;color:var(--ink-2)">Cerrar finanzas</span>`:acct?av({name:acct.name||acct.email,color:"#5DBE4C"},"sm")+`<span style="font-size:13px;color:var(--ink-2)">Salir</span>`:AUTH?`<span style="font-size:13px;color:var(--ink-2)">Entrar</span>`:`<span style="font-size:12px;color:var(--ink-3)">Act. ${esc(fmtDate(STATIC.updated))}</span>`;
   const tab=(href,label,icon)=>`<a href="#${href}" class="${h===href?"on":""}">${icon}${label}</a>`;
@@ -998,6 +1005,8 @@ document.addEventListener("click",e=>{
   const act=a.dataset.act;
   if(act==="mgtoggle"){meetClosed=!meetClosed;try{localStorage.setItem("ik-mclosed",meetClosed?"1":"")}catch(_){}renderShell();return}
   if(act==="pgtoggle"){projClosed=!projClosed;try{localStorage.setItem("ik-pclosed",projClosed?"1":"")}catch(_){}renderShell();return}
+  if(act==="colortoggle"){colorOpen=!colorOpen;renderShell();return}
+  if(act==="setcolor"){setMyColor(a.dataset.c);return}
   if(act==="logout")signOut();
   if(act==="mbtn"){acct?signOut():openLogin()}
   if(act==="login")openLogin();
@@ -1021,14 +1030,14 @@ function projCard(p,showOwner){
     <div class="top"><h4>${esc(p.title)}</h4><span class="chips">${prioChip(p)}${chip(p.status)}</span></div>
     <p>${esc(p.desc)}</p>${p.goal?`<div class="goal"><b>Objetivo:</b> ${esc(p.goal)}</div>`:""}
     <div class="bottom">
-      <div class="info"><span>${showOwner&&p.owner?esc(user(p.owner).name)+" · ":""}${p.due?"Fecha: "+esc(fmtDate(p.due))+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span><b class="num">${v}%</b></div>
+      <div class="info"><span>${showOwner&&p.owner?esc(user(p.owner).name)+" · ":""}${p.due?"Fecha: "+esc(fmtDate(p.due))+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} steps</span><b class="num">${v}%</b></div>
       <div class="track"><i style="width:${v}%"></i></div>
     </div></a>`;
   return `<button class="proj" data-act="open" data-id="${esc(p.id)}">
     <div class="top"><h4>${esc(p.title)}</h4><span class="chips">${prioChip(p)}${chip(p.status)}</span></div>
     <p>${esc(p.desc)}</p>${p.goal?`<div class="goal"><b>Objetivo:</b> ${esc(p.goal)}</div>`:""}
     <div class="bottom">
-      <div class="info"><span>${showOwner?esc(u.name)+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</span><b class="num">${v}%</b></div>
+      <div class="info"><span>${showOwner?esc(u.name)+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} steps${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</span><b class="num">${v}%</b></div>
       <div class="track"><i style="width:${v}%"></i></div>
     </div></button>`;
 }
@@ -1109,6 +1118,8 @@ const PRIO={alta:"Alta",media:"Media",baja:"Baja"};let prioF="all";
 const visP=p=>(filter==="all"||p.status===filter)&&(prioF==="all"||(p.prio||"")===prioF);
 const byPrio=(a,b)=>({alta:0,media:1,baja:2}[a.prio]??3)-({alta:0,media:1,baja:2}[b.prio]??3);
 const prioChip=p=>p.prio&&PRIO[p.prio]?`<span class="prio prio-${p.prio}">${PRIO[p.prio]}</span>`:`<span class="prio prio-none">Sin prioridad</span>`;
+const prioPick=p=>canProj()&&p._db?`<label class="prio prio-${p.prio&&PRIO[p.prio]?p.prio:"none"} prio-sel" title="Cambiar prioridad"><select data-prio="${esc(p.id)}" aria-label="Prioridad del proyecto"><option value="" ${p.prio&&PRIO[p.prio]?"":"selected"}>Sin prioridad</option>${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${p.prio===k?"selected":""}>${l}</option>`).join("")}</select><span aria-hidden="true">▾</span></label>`:prioChip(p);
+function bindPrio(){$("#view").querySelectorAll("[data-prio]").forEach(s=>s.onchange=async()=>{const p=dbProj(s.dataset.prio);if(!p)return;p.prio=s.value;route();await saveGen(p,s.value?`puso prioridad ${PRIO[s.value]} a`:`quitó la prioridad de`);toast("Prioridad actualizada")})}
 function filterBar(){
   const opts=[["all","Todos"],["todo","Por iniciar"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"]];
   return `<div class="fbars"><div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>
@@ -1154,10 +1165,10 @@ setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHT
 function viewTasks(){const me=myId(),all=myTasks(),ts=all.filter(t=>prioF==="all"||(t.p.prio||"")===prioF);const by={};ts.forEach(t=>{(by[t.p.id]=by[t.p.id]||{p:t.p,items:[]}).items.push(t)});
   return `<div class="page-head"><div><div class="eyebrow">${esc(user(me).name)}</div><h1>Mis tareas</h1><p>Todo lo que tienes pendiente en todos los proyectos.</p></div><span class="hint num">${(n=>`${n} proyecto${n===1?"":"s"}`)(new Set(ts.map(t=>t.p.id)).size)} · ${ts.length} tarea${ts.length===1?"":"s"}</span></div>
   <div class="filters prio-f" style="margin:-4px 0 16px"><span class="hint">Prioridad del proyecto</span>${[["all","Todos"],["alta","Alta"],["media","Media"],["baja","Baja"]].map(([k,l])=>`<button data-act="pfilter" data-f="${k}" class="${prioF===k?"on":""}">${k!=="all"?`<i class="dot prio-${k}"></i>`:""}${l} <span class="num" style="opacity:.6">${new Set(all.filter(t=>k==="all"||(t.p.prio||"")===k).map(t=>t.p.id)).size}</span></button>`).join("")}</div>
-  ${ts.length?Object.values(by).sort((a,b)=>byPrio(a.p,b.p)).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a>${prioChip(g.p)}</h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
+  ${ts.length?Object.values(by).sort((a,b)=>byPrio(a.p,b.p)).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a>${prioPick(g.p)}</h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
     <ul class="gp-ms">${g.items.map(t=>`<li><input type="checkbox" data-tk="${esc(t.p.id)}:${t.i}" aria-label="Marcar como hecha"><span class="t">${esc(t.m[0])}</span>${asg(t.m).length>1?`<span class="stack">${asg(t.m).map(id=>av(user(id),"sm")).join("")}</span>`:""}</li>`).join("")}</ul></section>`).join("")
   :`<div class="empty">${all.length?"No tienes tareas con esta prioridad.":"No tienes tareas pendientes. 🎉"}</div>`}`}
-function bindTasks(){$("#view").querySelectorAll("[data-tk]").forEach(c=>c.onchange=async()=>{const [pid,i]=c.dataset.tk.split(":");const p=dbProj(pid),m=p&&p.ms[+i];if(!m)return;m[1]=1;
+function bindTasks(){bindPrio();$("#view").querySelectorAll("[data-tk]").forEach(c=>c.onchange=async()=>{const [pid,i]=c.dataset.tk.split(":");const p=dbProj(pid),m=p&&p.ms[+i];if(!m)return;m[1]=1;
   if(p.ms.every(x=>x[1]))p.status="done";else if(p.status==="todo")p.status="doing";route();await saveGen(p,`completó «${m[0]}» en`)})}
 /* ---------- Chat del equipo (Supabase: chat) ---------- */
 let CHAT=[],chatReady=false,chatSeen=0;try{chatSeen=+localStorage.getItem("ik-chat-seen")||0}catch(_){}
@@ -1260,11 +1271,14 @@ function bindMeetings(openNew){if(!canMeet())return;
 let projClosed=false;try{projClosed=!!localStorage.getItem("ik-pclosed")}catch(_){}
 let GEN=null, genReady=false, pEditing=false;
 const canProj=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&genReady);
+async function setMyColor(c){const me=myId();if(!me||!AUTH)return;UCOL[me]=c;colorOpen=false;route();
+  try{const r=await AUTH.from("gen_projects").select("id,data").eq("id","_colors").maybeSingle();const map=Object.assign({},(r.data&&r.data.data&&r.data.data.map)||{},{[me]:c});
+    const w=await AUTH.from("gen_projects").upsert({id:"_colors",data:{map,_act:""}});if(w.error)throw w.error;UCOL=map;toast("Color actualizado")}catch(e){toast("No se pudo guardar el color")}}
 function setProjects(stat){S.projects=GEN?GEN.slice():stat.slice()} /* con base de datos, todos los proyectos viven ahí; lo borrado no regresa */
 const toGen=r=>Object.assign({},r.data,{id:r.id,area:(r.data&&r.data.area)||"general",_db:1});
 let genMeta=null;
 async function fetchGen(){const r=await AUTH.from("gen_projects").select("id,data,updated_at").order("created_at",{ascending:true});if(r.error)throw r.error;
-  genMeta=r.data.find(x=>x.id==="_meta")||null;return r.data.filter(x=>!x.id.startsWith("_")).map(toGen)}
+  genMeta=r.data.find(x=>x.id==="_meta")||null;{const c=r.data.find(x=>x.id==="_colors");UCOL=(c&&c.data&&c.data.map)||{}}return r.data.filter(x=>!x.id.startsWith("_")).map(toGen)}
 async function loadGen(){if(!AUTH||!acct)return;
   try{let g=await fetchGen();genReady=true;
     /* Pasa a la base de datos, una sola vez, los proyectos que estaban fijos en la página */
@@ -1301,13 +1315,13 @@ function asgBox(i,arr,ed,p){const av_=arr.length?`<span class="stack">${arr.map(
 let prevHash="pulso";window.addEventListener("hashchange",e=>{try{const o=new URL(e.oldURL).hash.slice(1);if(o&&!o.startsWith("p/"))prevHash=o}catch(_){}});
 function goBack(){const p=dbProj(location.hash.slice(3));location.hash=prevHash||(p&&AREAS[p.area]?p.area:"proyectos")}
 function viewGenProject(id){
-  const p=dbProj(id),ed=canProj(),perHito=p.area==="general",v=pct(p),dl=daysTo(p.due),cps=p.cps||[];
+  const p=dbProj(id),ed=canProj(),perHito=p.area==="general",autoOwn=!perHito&&!!p.owner,v=pct(p),dl=daysTo(p.due),cps=p.cps||[];
   const people=[...new Set(p.ms.flatMap(asg))];
   return `<button class="btn ghost sm backbtn" data-act="back">← Volver</button>
   <div class="area-hero">
-    <div><span class="n">${AREAS[p.area]?`<a href="#${p.area}" style="color:inherit;text-decoration:none">${AREAS[p.area].n} · ${esc(AREAS[p.area].name)}</a>`:"Proyecto general · toda la empresa"}${p.owner?" · Responsable: "+esc(user(p.owner).name):""}</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>${p.goal?`<div class="goal-hero"><span>Objetivo</span>${esc(p.goal)}</div>`:""}
-      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${prioChip(p)}${chip(p.status)}
-        <span style="color:var(--olive-ink-2);font-size:13.5px">${p.due?`Fecha: ${esc(fmtDate(p.due))}${dl!==null&&dl>=0&&p.status!=="done"?` · faltan ${dl} día${dl===1?"":"s"}`:""}`:"Sin fecha"} · ${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span>
+    <div><span class="n">${AREAS[p.area]?`<a href="#${p.area}" style="color:inherit;text-decoration:none">${AREAS[p.area].n} · ${esc(AREAS[p.area].name)}</a>`:"Proyecto general · toda la empresa"}${p.owner?(p.area==="general"?" · Creado por: ":" · Responsable: ")+esc(user(p.owner).name):""}</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>${p.goal?`<div class="goal-hero"><span>Objetivo</span>${esc(p.goal)}</div>`:""}
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${prioPick(p)}${chip(p.status)}
+        <span style="color:var(--olive-ink-2);font-size:13.5px">${p.due?`Fecha: ${esc(fmtDate(p.due))}${dl!==null&&dl>=0&&p.status!=="done"?` · faltan ${dl} día${dl===1?"":"s"}`:""}`:"Sin fecha"} · ${p.ms.filter(m=>m[1]).length}/${p.ms.length} steps</span>
         <span class="stack">${people.map(id=>av(user(id),"sm")).join("")}</span></div></div>
     <div class="ring" style="--p:${v};--size:120px"><div><div><b class="num">${v}%</b><br><span>AVANCE</span></div></div></div>
   </div>
@@ -1318,21 +1332,21 @@ function viewGenProject(id){
     <label class="field">Descripción<textarea id="gpD" maxlength="400">${esc(p.desc||"")}</textarea></label>
     <label class="field">Objetivo<textarea id="gpG" maxlength="300" placeholder="¿Qué se logra cuando esté listo?">${esc(p.goal||"")}</textarea></label>
     <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
-    <label class="field">Responsable del proyecto<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+    <label class="field">${p.area==="general"?"Creado por":"Responsable del proyecto"}<select id="gpO"><option value="">${p.area==="general"?"Nadie":"Sin responsable"}</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
     <label class="field">Prioridad<select id="gpP"><option value="">Sin prioridad</option>${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${p.prio===k?"selected":""}>${l}</option>`).join("")}</select></label>
     <label class="field">Estado<select id="gpS">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
     <div class="gp-row" style="justify-content:space-between"><button type="button" class="btn ghost sm danger" id="gpDel">Borrar proyecto</button>
     <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
   </form>`:`<div style="height:16px"></div>`}
   <section class="panel">
-    <div class="section-title"><h2>Hitos</h2><span class="eyebrow">${p.owner?"Responsable del proyecto: "+esc(user(p.owner).name):"Cada hito, una o varias personas"}</span></div>
+    <div class="section-title"><h2>Steps</h2><span class="eyebrow">${p.owner&&p.area!=="general"?"Responsable del proyecto: "+esc(user(p.owner).name):"Cada step, una o varias personas"}</span></div>
     <ul class="gp-ms">${p.ms.map((m,i)=>`<li class="${m[1]?"done":""}" ${ed?`draggable="true" data-gi="${i}"`:""}>
       ${ed?`<span class="grip" title="Arrastra para mover" aria-hidden="true">⋮⋮</span>`:""}
       <input type="checkbox" data-gms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"} aria-label="Completado">
       <span class="t">${esc(m[0])}</span>
       ${asgBox(i,asg(m),ed,p)}
-      ${ed?`<span class="mv"><button type="button" class="iconbtn" data-gup="${i}" ${i===0?"disabled":""} title="Subir" aria-label="Subir hito">↑</button><button type="button" class="iconbtn" data-gdn="${i}" ${i===p.ms.length-1?"disabled":""} title="Bajar" aria-label="Bajar hito">↓</button></span><button type="button" class="iconbtn" data-gdel="${i}" title="Quitar hito" aria-label="Quitar hito">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay hitos.</li>'}</ul>
-    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo hito" maxlength="90" required>${respSel("",'id="gpMsR"')}<button class="btn sm" type="submit">Agregar</button></form>`:""}
+      ${ed?`<span class="mv"><button type="button" class="iconbtn" data-gup="${i}" ${i===0?"disabled":""} title="Subir" aria-label="Subir step">↑</button><button type="button" class="iconbtn" data-gdn="${i}" ${i===p.ms.length-1?"disabled":""} title="Bajar" aria-label="Bajar step">↓</button></span><button type="button" class="iconbtn" data-gdel="${i}" title="Quitar step" aria-label="Quitar step">×</button>`:""}</li>`).join("")||'<li class="hint">Todavía no hay steps.</li>'}</ul>
+    ${ed?`<form class="addrow gp-add" id="gpAdd"><input id="gpMs" placeholder="Nuevo step" maxlength="90" required>${autoOwn?`<span class="hint auto-own" title="Lo puedes compartir con más gente desde el step">Para ${esc(user(p.owner).name.split(" ")[0])}</span>`:`<select class="inline resp" id="gpMsR" required aria-label="Quién hace este step"><option value="">¿Quién lo hace?</option>${teamUsers().map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join("")}</select>`}<button class="btn sm" type="submit">Agregar</button></form>`:""}
   </section>
   <section class="panel" style="margin-top:16px">
     <div class="section-title"><h2>Checkpoints</h2><span class="eyebrow">Metas medibles del proyecto</span></div>
@@ -1343,7 +1357,7 @@ function viewGenProject(id){
   </section>
   ${(p.links||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Entregables y links</h2></div><div class="links">${p.links.map(l=>{const u=safeUrl(l[1])||(String(l[1]||"").startsWith("#")?l[1]:"");return u?`<a href="${esc(u)}" ${u.startsWith("#")?"":'target="_blank" rel="noopener"'}>${esc(l[0])} ↗</a>`:`<span>${esc(l[0])}</span>`}).join("")}</div></section>`:""}
   ${(p.log||[]).length?`<section class="panel" style="margin-top:16px"><div class="section-title"><h2>Actualizaciones</h2></div><div class="log">${p.log.map(l=>`<div class="it">${av(user(l[0]),"sm")}<div><div>${esc(l[1])}</div><div class="when">${esc(user(l[0]).name)} · ${ago(l[2])}</div></div></div>`).join("")}</div></section>`:""}`}
-function bindGenProject(id){if(!canProj())return;
+function bindGenProject(id){if(!canProj())return;bindPrio();
   const get=()=>dbProj(id);
   const commit=async(act)=>{const p=get();if(p.ms.length&&p.ms.every(m=>m[1])&&p.status!=="done"){p.status="done"}else if(p.status==="done"&&p.ms.some(m=>!m[1]))p.status="doing";else if(p.status==="todo"&&p.ms.some(m=>m[1]))p.status="doing";
     route();await saveGen(p,act)};
@@ -1365,8 +1379,8 @@ function bindGenProject(id){if(!canProj())return;
     li.addEventListener("dragleave",()=>li.classList.remove("over"));
     li.addEventListener("drop",e=>{e.preventDefault();const to=+li.dataset.gi;const from=dragI;dragI=null;move(from,to)});
   });
-  $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el hito «${m[0]}» de`)});
-  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();p.ms.push([t,0,$("#gpMsR")&&$("#gpMsR").value?[$("#gpMsR").value]:[]]);commit(`agregó el hito «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
+  $("#view").querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{const p=get(),m=p.ms.splice(+b.dataset.gdel,1)[0];commit(`quitó el step «${m[0]}» de`)});
+  $("#gpAdd").onsubmit=e=>{e.preventDefault();const t=$("#gpMs").value.trim();if(!t)return;const p=get();const r=$("#gpMsR");if(r&&!r.value){r.focus();return}p.ms.push([t,0,r?[r.value]:(p.area!=="general"&&p.owner?[p.owner]:[])]);commit(`agregó el step «${t}» en`).then(()=>{const i=$("#gpMs");i&&i.focus()})};
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
@@ -1376,19 +1390,19 @@ function bindGenProject(id){if(!canProj())return;
     const ar=(dbProj(id)||{}).area;GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash=AREAS[ar]?ar:"proyectos"};
 }
 function viewNewProject(ar){const opts=[["general","General · toda la empresa"],...AREA_KEYS.map(k=>[k,AREAS[k].name])];const mine=acct&&acct.member||"";
-  return `<div class="page-head"><div><div class="eyebrow">${AREAS[ar]?esc(AREAS[ar].short):"Proyectos"}</div><h1>Nuevo proyecto</h1><p>${ar==="general"?"Después le agregas hitos, cada uno con su responsable.":"Tú quedas como responsable. Después le agregas los hitos."}</p></div></div>
+  return `<div class="page-head"><div><div class="eyebrow">${AREAS[ar]?esc(AREAS[ar].short):"Proyectos"}</div><h1>Nuevo proyecto</h1><p>${ar==="general"?"Quedas como creador. Después le agregas steps y eliges quién hace cada uno.":"Tú quedas como responsable. Después le agregas los steps."}</p></div></div>
   <form class="panel gp-form" id="npF">
     <label class="field">Nombre<input id="npT" maxlength="80" required placeholder="Ej. Lanzamiento en Costa Rica"></label>
     <label class="field">Descripción<textarea id="npD" maxlength="400" placeholder="¿De qué se trata?"></textarea></label>
     <label class="field">Objetivo<textarea id="npG" maxlength="300" placeholder="¿Qué se logra cuando esté listo? Ej. Tener 50 clientes pagando en Costa Rica"></textarea></label>
     <div class="gp-row"><label class="field">Dónde va<select id="npA">${opts.map(([k,l])=>`<option value="${k}" ${ar===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
-      <label class="field" id="npOw" ${ar==="general"?"":"hidden"}>Responsable<select id="npO"><option value="">Sin responsable</option>${teamUsers().map(u=>`<option value="${esc(u.id)}" ${mine===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+      <label class="field" id="npOw" hidden>Responsable<select id="npO"><option value="">Sin responsable</option>${teamUsers().map(u=>`<option value="${esc(u.id)}" ${mine===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
       <label class="field">Prioridad<select id="npP">${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${k==="media"?"selected":""}>${l}</option>`).join("")}</select></label>
       <label class="field">Fecha<input id="npDue" type="date"></label></div>
     <div class="gp-row" style="justify-content:flex-end"><a class="btn ghost sm" href="#${AREAS[ar]?ar:"proyectos"}" style="text-decoration:none">Cancelar</a><button class="btn sm" type="submit">Crear proyecto</button></div>
   </form>`}
-function bindNewProject(){$("#npT").focus();$("#npA").onchange=()=>{$("#npOw").hidden=$("#npA").value!=="general"};$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
-  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npA").value==="general"?$("#npO").value:((acct&&acct.member)||$("#npO").value),title:$("#npT").value.trim(),desc:$("#npD").value.trim(),goal:$("#npG").value.trim(),prio:$("#npP").value,due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
+function bindNewProject(){$("#npT").focus();$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
+  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:(acct&&acct.member)||$("#npO").value,title:$("#npT").value.trim(),desc:$("#npD").value.trim(),goal:$("#npG").value.trim(),prio:$("#npP").value,due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
   GEN=(GEN||[]).concat([p]);setProjects(STATIC.projects);
   if(await saveGen(p,"creó el proyecto"))location.hash="p/"+p.id;else b.disabled=false}}
 function viewDone(){const ps=doneProjects();const groups=[["general","Proyectos generales"],...AREA_KEYS.map(k=>[k,AREAS[k].name])];
@@ -1553,9 +1567,9 @@ function renderDrawer(){
       <dt>Estado</dt><dd>${ed?`<select class="inline" id="dStatus" style="max-width:200px">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select>`:chip(p.status)}</dd>
       <dt>Fecha meta</dt><dd>${fmtDate(p.due)}</dd>
     </dl>
-    <div><div class="section-title"><h2 style="font-size:15px">Hitos</h2><span class="eyebrow num">${p.ms.filter(m=>m[1]).length} de ${p.ms.length}</span></div>
-      <div class="ms">${p.ms.map((m,i)=>`<label class="${m[1]?"done":""}" for="ms${i}"><input type="checkbox" id="ms${i}" data-ms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"}><span>${esc(m[0])}</span></label>`).join("")||'<div class="hint">Sin hitos.</div>'}</div>
-      ${ed?`<form class="addrow" id="msAdd" style="margin-top:8px"><input id="msText" placeholder="Agregar hito" maxlength="90"><button class="btn sm ghost" type="submit">Agregar</button></form>`:""}
+    <div><div class="section-title"><h2 style="font-size:15px">Steps</h2><span class="eyebrow num">${p.ms.filter(m=>m[1]).length} de ${p.ms.length}</span></div>
+      <div class="ms">${p.ms.map((m,i)=>`<label class="${m[1]?"done":""}" for="ms${i}"><input type="checkbox" id="ms${i}" data-ms="${i}" ${m[1]?"checked":""} ${ed?"":"disabled"}><span>${esc(m[0])}</span></label>`).join("")||'<div class="hint">Sin steps.</div>'}</div>
+      ${ed?`<form class="addrow" id="msAdd" style="margin-top:8px"><input id="msText" placeholder="Agregar step" maxlength="90"><button class="btn sm ghost" type="submit">Agregar</button></form>`:""}
     </div>
     ${p.links.length?`<div><h2 style="font-size:15px;margin-bottom:6px">Entregables</h2><div class="links">${p.links.map(l=>`<a href="${/^(https?:|#)/.test(l[1])?esc(l[1]):"#"}" target="${l[1].startsWith("#")?"_self":"_blank"}" rel="noopener">↗ ${esc(l[0])}</a>`).join("")}</div></div>`:""}
     <div><h2 style="font-size:15px;margin-bottom:10px">Bitácora</h2>
@@ -1601,8 +1615,8 @@ function openModal(p,areaHint){
       <label class="field" for="fDue">Fecha meta<input type="date" id="fDue" value="${p?esc(p.due):""}"></label>
     </div>
     <label class="field" for="fLink">Link a entregable (opcional)<input id="fLink" type="url" placeholder="https://" value=""></label>
-    ${p?"":`<label class="field" for="fMs">Hitos, uno por línea<textarea id="fMs" placeholder="Definir alcance&#10;Recolectar datos&#10;Presentar resultados"></textarea></label>
-    <p class="hint">El avance se calcula con los hitos que vayas marcando.</p>`}
+    ${p?"":`<label class="field" for="fMs">Steps, uno por línea<textarea id="fMs" placeholder="Definir alcance&#10;Recolectar datos&#10;Presentar resultados"></textarea></label>
+    <p class="hint">El avance se calcula con los steps que vayas marcando.</p>`}
     <div class="actions"><button type="button" class="btn ghost" id="fCancel">Cancelar</button><button class="btn" type="submit">${p?"Guardar cambios":"Crear proyecto"}</button></div>
   </form>`;
   $("#modal").classList.add("on");$("#scrim").classList.add("on");setTimeout(()=>$("#fTitle").focus(),50);

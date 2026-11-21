@@ -163,7 +163,7 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .nav .grp:hover{color:var(--rail-ink)}.nav .grp .chev{letter-spacing:0;font-size:11px}
 .nav a .ell{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav a.addp{color:var(--rail-ink-2);font-size:13px}
-.nav a.newp{color:var(--green);font-weight:600}.nav a.newp .n{font-size:15px}
+.nav a.newbtn{justify-content:center;background:var(--green);color:#0F1612;font-weight:600;margin:6px 0 4px;border-radius:999px;padding:9px 12px}.nav a.newbtn:hover{background:var(--green);filter:brightness(1.08);color:#0F1612}
 .gp-form{display:grid;gap:14px;margin:0 0 20px}
 .gp-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.gp-row .field{flex:1;min-width:160px}
 .btn.danger{color:#E5806B;border-color:rgba(229,128,107,.4)}
@@ -956,13 +956,14 @@ function renderShell(){
      ${AUTH&&acct&&myId()?`<a href="#tareas" class="${h==="tareas"?"on":""}">${ICON.check}Mis tareas<span class="count num">${myTasks().length||""}</span></a>`:""}
      ${AUTH&&acct?`<a href="#chat" class="${h==="chat"?"on":""}">${ICON.chat}Chat del equipo<span class="count num">${chatUnread()||""}</span></a>`:""}
      <a href="#finanzas" class="${h==="finanzas"?"on":""}">${ICON.money}Finanzas<span class="count">${finView()?"":ICON.lock}</span></a>
+     ${canProj()?`<a href="#p/nuevo" class="newbtn">+ Crear proyecto</a>`:""}
      ${acctAdmin()?`<a href="#cuentas" class="${h==="cuentas"?"on":""}">${ICON.team}Cuentas<span class="count num">${staffCache.filter(x=>x.role==="pending").length||""}</span></a>`:""}
      ${isAdmin()?`<a href="#equipo" class="${h==="equipo"?"on":""}">${ICON.team}Equipo<span class="count num">${S.users.length}</span></a>`:""}
      <div class="label">Áreas</div>`+
     AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("")+
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
-    (canProj()?`<a href="#p/nuevo" class="addp newp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Crear proyecto</a>`:"")+
+
     genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
     (doneProjects().length?`<a href="#completados" class="${h==="completados"?"on":""}"><span class="n">✓</span>Completados<span class="count num">${doneProjects().length}</span></a>`:"")+
     "")+

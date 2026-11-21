@@ -161,6 +161,7 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .nav .grp:hover{color:var(--rail-ink)}.nav .grp .chev{letter-spacing:0;font-size:11px}
 .nav a .ell{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav a.addp{color:var(--rail-ink-2);font-size:13px}
+.nav a.newp{color:var(--green);font-weight:600}.nav a.newp .n{font-size:15px}
 .gp-form{display:grid;gap:14px;margin:0 0 20px}
 .gp-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.gp-row .field{flex:1;min-width:160px}
 .btn.danger{color:#E5806B;border-color:rgba(229,128,107,.4)}
@@ -959,9 +960,10 @@ function renderShell(){
     AREA_KEYS.map(k=>`<a href="#${k}" class="${h===k?"on":""}"><span class="n">${AREAS[k].n}</span>${AREAS[k].short}<span class="count num">${areaPct(k)}%</span></a>`).join("")+
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
+    (canProj()?`<a href="#p/nuevo" class="addp newp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Crear proyecto</a>`:"")+
     genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
     (doneProjects().length?`<a href="#completados" class="${h==="completados"?"on":""}"><span class="n">✓</span>Completados<span class="count num">${doneProjects().length}</span></a>`:"")+
-    (canProj()?`<a href="#p/nuevo" class="addp ${h==="p/nuevo"?"on":""}"><span class="n">+</span>Nuevo proyecto</a>`:""))+
+    "")+
     (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
     (meetClosed?"":`<a href="#meetings" class="${h==="meetings"?"on":""}">${ICON.cal}Todas<span class="count num">${upcoming().length||""}</span></a>`+
     upcoming().slice(0,3).map(m=>`<a href="#meetings" class="mt-nav"><span class="n">${esc(new Date(m.at).toLocaleDateString("es",{day:"numeric",month:"short"}).replace(".",""))}</span><span class="ell">${esc(m.title)}</span></a>`).join("")+

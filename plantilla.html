@@ -222,8 +222,11 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .prio::before,.dot{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor}
 .prio-alta{color:#E5806B}.prio.prio-alta{background:rgba(229,128,107,.15)}
 .prio-media{color:#E9B949}.prio.prio-media{background:rgba(233,185,73,.15)}
-.prio-baja{color:#7FB5E5}.prio.prio-baja{background:rgba(127,181,229,.15)}
+.prio-baja{color:#7FB5E5}.prio.prio-none{color:var(--ink-3);background:var(--surface-2)}.prio.prio-baja{background:rgba(127,181,229,.15)}
 .fbars{display:grid;gap:8px}.filters.prio-f{align-items:center}.filters.prio-f .hint{font-size:12px;margin-right:2px}.filters .dot{margin-right:6px;vertical-align:1px}
+.nav .dot{width:8px;height:8px}.dot.nodot{background:var(--rail-ink-2);opacity:.5}.mt-tag .dot{width:6px;height:6px;margin-right:4px;vertical-align:1px}
+.feed .prio{font-size:10.5px;padding:1px 7px;vertical-align:1px}
+.pc-list .prio{font-size:11px;padding:2px 7px}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -969,7 +972,7 @@ function renderShell(){
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
 
-    genProjects().sort(byPrio).map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
+    genProjects().sort(byPrio).map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}" title="${p.prio?"Prioridad "+esc(PRIO[p.prio]||""):""}"><span class="n"><i class="dot ${p.prio?"prio-"+p.prio:"nodot"}"></i></span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
     (doneProjects().length?`<a href="#completados" class="${h==="completados"?"on":""}"><span class="n">✓</span>Completados<span class="count num">${doneProjects().length}</span></a>`:"")+
     "")+
     (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
@@ -1034,7 +1037,7 @@ function feedHTML(){
   const lv=LIVEFEED.map(a=>({ptitle:a.ptitle,u:S.users.find(x=>(x.name||"").toLowerCase()===(a.who||"").toLowerCase())||{name:a.who||"Alguien",color:"#5DBE4C"},text:a.text,pid:a.pid,at:a.at}));
   const all=st.concat(lv).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,8);
   return all.map(f=>{const p=f.pid?S.projects.find(x=>x.id===f.pid):null;
-    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?(p._db?`<a href="#p/${esc(p.id)}">${esc(p.title)}</a>`:`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`):f.pid&&AREAS[f.pid]?`<a href="#${f.pid}">${esc(AREAS[f.pid].short)}</a>`:f.ptitle?esc(f.ptitle):""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
+    return `<li>${av(f.u,"sm")}<div><div class="txt"><b>${esc(f.u.name)}</b> ${esc(f.text)} ${p?(p._db?`<a href="#p/${esc(p.id)}">${esc(p.title)}</a> ${prioChip(p)}`:`<a data-act="open" data-id="${esc(p.id)}">${esc(p.title)}</a>`):f.pid&&AREAS[f.pid]?`<a href="#${f.pid}">${esc(AREAS[f.pid].short)}</a>`:f.ptitle?esc(f.ptitle):""}</div><div class="when">${ago(f.at)}</div></div></li>`}).join("")||'<li><div></div><div class="when">Sin actividad todavía.</div></li>'}
 function refreshFeed(){const n=document.getElementById("feedList");if(n)n.innerHTML=feedHTML()}
 setInterval(refreshFeed,30000);
 let actStarted=false;
@@ -1104,7 +1107,7 @@ function viewPulso(){
 const PRIO={alta:"Alta",media:"Media",baja:"Baja"};let prioF="all";
 const visP=p=>(filter==="all"||p.status===filter)&&(prioF==="all"||(p.prio||"")===prioF);
 const byPrio=(a,b)=>({alta:0,media:1,baja:2}[a.prio]??3)-({alta:0,media:1,baja:2}[b.prio]??3);
-const prioChip=p=>p.prio&&PRIO[p.prio]?`<span class="prio prio-${p.prio}">${PRIO[p.prio]}</span>`:"";
+const prioChip=p=>p.prio&&PRIO[p.prio]?`<span class="prio prio-${p.prio}">${PRIO[p.prio]}</span>`:`<span class="prio prio-none">Sin prioridad</span>`;
 function filterBar(){
   const opts=[["all","Todos"],["todo","Por iniciar"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"]];
   return `<div class="fbars"><div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>
@@ -1149,7 +1152,7 @@ setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHT
 /* ---------- Mis tareas ---------- */
 function viewTasks(){const me=myId(),ts=myTasks();const by={};ts.forEach(t=>{(by[t.p.id]=by[t.p.id]||{p:t.p,items:[]}).items.push(t)});
   return `<div class="page-head"><div><div class="eyebrow">${esc(user(me).name)}</div><h1>Mis tareas</h1><p>Todo lo que tienes pendiente en todos los proyectos.</p></div><span class="hint num">${ts.length} pendiente${ts.length===1?"":"s"}</span></div>
-  ${ts.length?Object.values(by).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a></h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
+  ${ts.length?Object.values(by).sort((a,b)=>byPrio(a.p,b.p)).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a>${prioChip(g.p)}</h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
     <ul class="gp-ms">${g.items.map(t=>`<li><input type="checkbox" data-tk="${esc(t.p.id)}:${t.i}" aria-label="Marcar como hecha"><span class="t">${esc(t.m[0])}</span>${asg(t.m).length>1?`<span class="stack">${asg(t.m).map(id=>av(user(id),"sm")).join("")}</span>`:""}</li>`).join("")}</ul></section>`).join("")
   :'<div class="empty">No tienes tareas pendientes. 🎉</div>'}`}
 function bindTasks(){$("#view").querySelectorAll("[data-tk]").forEach(c=>c.onchange=async()=>{const [pid,i]=c.dataset.tk.split(":");const p=dbProj(pid),m=p&&p.ms[+i];if(!m)return;m[1]=1;
@@ -1181,7 +1184,7 @@ let MEET=[], meetReady=false, mtEditing=false;
 let meetClosed=false;try{meetClosed=!!localStorage.getItem("ik-mclosed")}catch(_){}
 const upcoming=()=>MEET.filter(m=>new Date(m.at)>=Date.now()-60*6e4).sort((a,b)=>new Date(a.at)-new Date(b.at));
 const scopeOpts=()=>[["general","General · toda la empresa"],...AREA_KEYS.map(k=>[k,"Área · "+AREAS[k].short]),...genProjects().map(p=>[p.id,"Proyecto · "+p.title])];
-const scopeTag=sc=>{if(!sc||sc==="general")return"";const n=scopeName(sc);if(!n)return"";const href=AREAS[sc]?"#"+sc:"#p/"+sc;return `<a class="mt-tag" href="${href}">${esc(n)}</a>`};
+const scopeTag=sc=>{if(!sc||sc==="general")return"";const n=scopeName(sc);if(!n)return"";const href=AREAS[sc]?"#"+sc:"#p/"+sc;const pp=AREAS[sc]?null:dbProj(sc);return `<a class="mt-tag" href="${href}">${pp&&pp.prio?`<i class="dot prio-${pp.prio}"></i>`:""}${esc(n)}</a>`};
 const canMeet=()=>!!(AUTH&&acct&&["admin","cofounder","finance"].includes(acct.role)&&meetReady);
 const scopeName=sc=>sc==="general"?"General":AREAS[sc]?AREAS[sc].short:((genProjects().find(p=>p.id===sc)||{}).title||"");
 async function fetchMeet(){const r=await AUTH.from("meetings").select("id,scope,data").order("created_at",{ascending:true});if(r.error)throw r.error;return r.data.map(x=>Object.assign({},x.data,{id:x.id,scope:x.scope}))}
@@ -1402,7 +1405,7 @@ function viewPeople(){
   <div class="people">${teamUsers().map(u=>{const mine=S.projects.filter(p=>p.owner===u.id||(p._db&&p.ms.some(m=>asg(m).includes(u.id)&&!m[1])));const now=mine.filter(p=>p.status!=="done");const done=mine.length-now.length;
     return `<section class="panel person-card"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role.includes(areaName(u.area))?u.role:u.role+" · "+areaName(u.area))}</div></div>
       <span class="sum num">${now.length} en marcha${done?` · ${done} listo${done===1?"":"s"}`:""}</span></div>
-      ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button ${p._db?`onclick="location.hash='p/${esc(p.id)}'"`:`data-act="open" data-id="${esc(p.id)}"`}><span class="t">${esc(p.title)}</span>${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
+      ${now.length?`<ul class="pc-list">${now.map(p=>`<li><button ${p._db?`onclick="location.hash='p/${esc(p.id)}'"`:`data-act="open" data-id="${esc(p.id)}"`}><span class="t">${esc(p.title)}</span>${prioChip(p)}${chip(p.status)}<b class="num">${pct(p)}%</b></button><div class="track"><i style="width:${pct(p)}%"></i></div></li>`).join("")}</ul>`
         :'<div class="empty">Sin proyectos en marcha.</div>'}</section>`}).join("")}</div>`}
 function viewTeam(){
   const areaName=a=>a==="dir"?"Dirección":AREAS[a]?AREAS[a].short:a;

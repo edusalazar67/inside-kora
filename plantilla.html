@@ -1257,6 +1257,7 @@ async function loadGen(){if(!AUTH||!acct)return;
       g=await fetchGen();}
     for(const p of g){if(p.id==="g1"&&p.due==="2026-12-18"){const f=t=>typeof t==="string"?t.replace("el 18 de diciembre","el lunes 21 de diciembre en la App Store").replace("18 dic","21 dic"):t;
       p.due="2026-12-21";p.desc=f(p.desc);p.goal=f(p.goal);p.ms=p.ms.map(m=>[f(m[0]),...m.slice(1)]);saveGen(p,"cambió la fecha de lanzamiento al lunes 21 de diciembre en")}}
+    for(const p of g){if(p.id==="p4"&&!p._fix100&&p.status!=="done"){p._fix100=1;p.ms=p.ms.map(m=>[m[0],1,...m.slice(2)]);p.status="done";saveGen(p,"completó")}}
     for(const p of g){if(typeof p.desc==="string"&&p.desc.includes("Micro $5.55")){p.desc=p.desc.replace("Micro $5.55","Micro $5.99");saveGen(p,"actualizó el precio Micro de El Salvador a $5.99 en")}}
     for(const p of g){if(p.goal===undefined){const st=STATIC.projects.find(x=>x.id===p.id);if(st&&st.goal){p.goal=st.goal;saveGen(p,"")}}}
     GEN=g;setProjects(STATIC.projects);
@@ -1296,7 +1297,7 @@ function viewGenProject(id){
     <label class="field">Descripción<textarea id="gpD" maxlength="400">${esc(p.desc||"")}</textarea></label>
     <label class="field">Objetivo<textarea id="gpG" maxlength="300" placeholder="¿Qué se logra cuando esté listo?">${esc(p.goal||"")}</textarea></label>
     <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
-    <label class="field" ${perHito?"":"hidden"}>Responsable<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+    <label class="field">Responsable del proyecto<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
     <label class="field">Estado<select id="gpS">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
     <div class="gp-row" style="justify-content:space-between"><button type="button" class="btn ghost sm danger" id="gpDel">Borrar proyecto</button>
     <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
@@ -1347,7 +1348,7 @@ function bindGenProject(id){if(!canProj())return;
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
-  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;p.owner=$("#gpO").value;pEditing=false;route();saveGen(p,"editó")};
+  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;const prevO=p.owner;p.owner=$("#gpO").value;pEditing=false;route();saveGen(p,p.owner&&p.owner!==prevO?`pasó a ${user(p.owner).name} el proyecto`:"editó")};
   $("#gpDel").onclick=async()=>{const b=$("#gpDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
     const r=await AUTH.from("gen_projects").delete().eq("id",id);if(r.error){toast("No se pudo borrar");return}
     const ar=(dbProj(id)||{}).area;GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash=AREAS[ar]?ar:"proyectos"};

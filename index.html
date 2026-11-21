@@ -225,7 +225,7 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .prio-alta{color:#E5806B}.prio.prio-alta{background:rgba(229,128,107,.15)}
 .prio-media{color:#E9B949}.prio.prio-media{background:rgba(233,185,73,.15)}
 .prio-baja{color:#7FB5E5}.prio.prio-none{color:var(--ink-3);background:var(--surface-2)}.prio.prio-baja{background:rgba(127,181,229,.15)}
-.fbars{display:grid;gap:8px}.filters.prio-f{align-items:center}.filters.prio-f .hint{font-size:12px;margin-right:2px}.filters .dot{margin-right:6px;vertical-align:1px}
+.fbars{display:grid;gap:8px}.backbtn{margin-bottom:14px}.filters.prio-f{align-items:center}.filters.prio-f .hint{font-size:12px;margin-right:2px}.filters .dot{margin-right:6px;vertical-align:1px}
 .nav .dot{width:8px;height:8px}.dot.nodot{background:var(--rail-ink-2);opacity:.5}.mt-tag .dot{width:6px;height:6px;margin-right:4px;vertical-align:1px}
 .feed .prio{font-size:10.5px;padding:1px 7px;vertical-align:1px}
 .pc-list .prio{font-size:11px;padding:2px 7px}
@@ -1010,6 +1010,7 @@ document.addEventListener("click",e=>{
   if(act==="new")openModal(null,a.dataset.area);
   if(act==="filter"){filter=a.dataset.f;route()}
   if(act==="pfilter"){prioF=a.dataset.f;route()}
+  if(act==="back")goBack();
   if(act==="person")openPerson(a.dataset.id?S.users.find(u=>u.id===a.dataset.id):null);
 });
 
@@ -1152,11 +1153,12 @@ function countdownPanel(){const c=cdParts();const g=genProjects().find(p=>/lanza
 function cdHTML(c){return [["d","días"],["h","horas"],["m","min"],["s","seg"]].map(([k,l])=>`<div class="cd-box"><b class="num">${String(c[k]).padStart(2,"0")}</b><span>${l}</span></div>`).join("")}
 setInterval(()=>{const n=document.getElementById("cdNums");if(n)n.innerHTML=cdHTML(cdParts())},1000);
 /* ---------- Mis tareas ---------- */
-function viewTasks(){const me=myId(),ts=myTasks();const by={};ts.forEach(t=>{(by[t.p.id]=by[t.p.id]||{p:t.p,items:[]}).items.push(t)});
+function viewTasks(){const me=myId(),all=myTasks(),ts=all.filter(t=>prioF==="all"||(t.p.prio||"")===prioF);const by={};ts.forEach(t=>{(by[t.p.id]=by[t.p.id]||{p:t.p,items:[]}).items.push(t)});
   return `<div class="page-head"><div><div class="eyebrow">${esc(user(me).name)}</div><h1>Mis tareas</h1><p>Todo lo que tienes pendiente en todos los proyectos.</p></div><span class="hint num">${ts.length} pendiente${ts.length===1?"":"s"}</span></div>
+  <div class="filters prio-f" style="margin:-4px 0 16px"><span class="hint">Prioridad</span>${[["all","Todas"],["alta","Alta"],["media","Media"],["baja","Baja"]].map(([k,l])=>`<button data-act="pfilter" data-f="${k}" class="${prioF===k?"on":""}">${k!=="all"?`<i class="dot prio-${k}"></i>`:""}${l} <span class="num" style="opacity:.6">${all.filter(t=>k==="all"||(t.p.prio||"")===k).length}</span></button>`).join("")}</div>
   ${ts.length?Object.values(by).sort((a,b)=>byPrio(a.p,b.p)).map(g=>`<section class="panel" style="margin-bottom:14px"><div class="section-title"><h2 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><a href="#p/${esc(g.p.id)}" style="color:inherit;text-decoration:none">${esc(g.p.title)}</a>${prioChip(g.p)}</h2><span class="eyebrow">${g.p.area==="general"?"General":esc(AREAS[g.p.area]?AREAS[g.p.area].short:"")}</span></div>
     <ul class="gp-ms">${g.items.map(t=>`<li><input type="checkbox" data-tk="${esc(t.p.id)}:${t.i}" aria-label="Marcar como hecha"><span class="t">${esc(t.m[0])}</span>${asg(t.m).length>1?`<span class="stack">${asg(t.m).map(id=>av(user(id),"sm")).join("")}</span>`:""}</li>`).join("")}</ul></section>`).join("")
-  :'<div class="empty">No tienes tareas pendientes. 🎉</div>'}`}
+  :`<div class="empty">${all.length?"No tienes tareas con esta prioridad.":"No tienes tareas pendientes. 🎉"}</div>`}`}
 function bindTasks(){$("#view").querySelectorAll("[data-tk]").forEach(c=>c.onchange=async()=>{const [pid,i]=c.dataset.tk.split(":");const p=dbProj(pid),m=p&&p.ms[+i];if(!m)return;m[1]=1;
   if(p.ms.every(x=>x[1]))p.status="done";else if(p.status==="todo")p.status="doing";route();await saveGen(p,`completó «${m[0]}» en`)})}
 /* ---------- Chat del equipo (Supabase: chat) ---------- */
@@ -1298,10 +1300,12 @@ function asgBox(i,arr,ed,p){const av_=arr.length?`<span class="stack">${arr.map(
   if(!ed)return `<span class="who">${av_}</span>`;
   const opts=teamUsers().concat(arr.filter(id=>!teamUsers().some(u=>u.id===id)).map(user));
   return `<details class="asg"><summary title="Asignar personas">${av_}</summary><div class="asg-pop">${opts.length?opts.map(u=>`<label><input type="checkbox" data-asg="${i}" value="${esc(u.id)}" ${arr.includes(u.id)?"checked":""}>${av(u,"sm")}${esc(u.name)}</label>`).join(""):'<span class="hint">Nadie en Team todavía</span>'}</div></details>`}
+let prevHash="pulso";window.addEventListener("hashchange",e=>{try{const o=new URL(e.oldURL).hash.slice(1);if(o&&!o.startsWith("p/"))prevHash=o}catch(_){}});
+function goBack(){const p=dbProj(location.hash.slice(3));location.hash=prevHash||(p&&AREAS[p.area]?p.area:"proyectos")}
 function viewGenProject(id){
   const p=dbProj(id),ed=canProj(),perHito=p.area==="general",v=pct(p),dl=daysTo(p.due),cps=p.cps||[];
   const people=[...new Set(p.ms.flatMap(asg))];
-  return `
+  return `<button class="btn ghost sm backbtn" data-act="back">← Volver</button>
   <div class="area-hero">
     <div><span class="n">${AREAS[p.area]?`<a href="#${p.area}" style="color:inherit;text-decoration:none">${AREAS[p.area].n} · ${esc(AREAS[p.area].name)}</a>`:"Proyecto general · toda la empresa"}${p.owner?" · Responsable: "+esc(user(p.owner).name):""}</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>${p.goal?`<div class="goal-hero"><span>Objetivo</span>${esc(p.goal)}</div>`:""}
       <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${prioChip(p)}${chip(p.status)}

@@ -217,6 +217,13 @@ main{min-width:0;padding-block:32px 64px;padding-left:max(28px,env(safe-area-ins
 .ch-form{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line)}
 .ch-form textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;font:inherit;color:inherit;max-height:120px}
 @media (max-width:860px){.chat{height:calc(100vh - 290px)}}
+.proj .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:none}
+.prio{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.prio::before,.dot{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor}
+.prio-alta{color:#E5806B}.prio.prio-alta{background:rgba(229,128,107,.15)}
+.prio-media{color:#E9B949}.prio.prio-media{background:rgba(233,185,73,.15)}
+.prio-baja{color:#7FB5E5}.prio.prio-baja{background:rgba(127,181,229,.15)}
+.fbars{display:grid;gap:8px}.filters.prio-f{align-items:center}.filters.prio-f .hint{font-size:12px;margin-right:2px}.filters .dot{margin-right:6px;vertical-align:1px}
 .pulse{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
 .overall{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
@@ -962,7 +969,7 @@ function renderShell(){
     `<button type="button" class="label grp" data-act="pgtoggle" aria-expanded="${!projClosed}">Proyectos<span class="chev">${projClosed?"▸":"▾"}</span></button>`+
     (projClosed?"":`<a href="#proyectos" class="${h==="proyectos"?"on":""}">${ICON.proj}Todos<span class="count num">${genProjects().length||""}</span></a>`+
 
-    genProjects().map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
+    genProjects().sort(byPrio).map(p=>`<a href="#p/${esc(p.id)}" class="${h==="p/"+p.id?"on":""}"><span class="n">•</span><span class="ell">${esc(p.title)}</span><span class="count num">${pct(p)}%</span></a>`).join("")+
     (doneProjects().length?`<a href="#completados" class="${h==="completados"?"on":""}"><span class="n">✓</span>Completados<span class="count num">${doneProjects().length}</span></a>`:"")+
     "")+
     (AUTH&&acct?`<button type="button" class="label grp" data-act="mgtoggle" aria-expanded="${!meetClosed}">Meetings<span class="chev">${meetClosed?"▸":"▾"}</span></button>`+
@@ -997,6 +1004,7 @@ document.addEventListener("click",e=>{
   if(act==="open")openDrawer(a.dataset.id);
   if(act==="new")openModal(null,a.dataset.area);
   if(act==="filter"){filter=a.dataset.f;route()}
+  if(act==="pfilter"){prioF=a.dataset.f;route()}
   if(act==="person")openPerson(a.dataset.id?S.users.find(u=>u.id===a.dataset.id):null);
 });
 
@@ -1006,14 +1014,14 @@ $("#mUser").onclick=()=>{if(!AUTH)return;acct?signOut():openLogin()};
 function projCard(p,showOwner){
   const u=user(p.owner),v=pct(p);
   if(p._db)return `<a class="proj" href="#p/${esc(p.id)}" style="text-decoration:none;color:inherit">
-    <div class="top"><h4>${esc(p.title)}</h4>${chip(p.status)}</div>
+    <div class="top"><h4>${esc(p.title)}</h4><span class="chips">${prioChip(p)}${chip(p.status)}</span></div>
     <p>${esc(p.desc)}</p>${p.goal?`<div class="goal"><b>Objetivo:</b> ${esc(p.goal)}</div>`:""}
     <div class="bottom">
       <div class="info"><span>${showOwner&&p.owner?esc(user(p.owner).name)+" · ":""}${p.due?"Fecha: "+esc(fmtDate(p.due))+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span><b class="num">${v}%</b></div>
       <div class="track"><i style="width:${v}%"></i></div>
     </div></a>`;
   return `<button class="proj" data-act="open" data-id="${esc(p.id)}">
-    <div class="top"><h4>${esc(p.title)}</h4>${chip(p.status)}</div>
+    <div class="top"><h4>${esc(p.title)}</h4><span class="chips">${prioChip(p)}${chip(p.status)}</span></div>
     <p>${esc(p.desc)}</p>${p.goal?`<div class="goal"><b>Objetivo:</b> ${esc(p.goal)}</div>`:""}
     <div class="bottom">
       <div class="info"><span>${showOwner?esc(u.name)+" · ":""}${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos${p.example?' · <span class="tag-ej">Ejemplo</span>':""}</span><b class="num">${v}%</b></div>
@@ -1093,15 +1101,20 @@ function viewPulso(){
     <ul id="feedList">${feedHTML()}</ul>
   </div>`;
 }
+const PRIO={alta:"Alta",media:"Media",baja:"Baja"};let prioF="all";
+const visP=p=>(filter==="all"||p.status===filter)&&(prioF==="all"||(p.prio||"")===prioF);
+const byPrio=(a,b)=>({alta:0,media:1,baja:2}[a.prio]??3)-({alta:0,media:1,baja:2}[b.prio]??3);
+const prioChip=p=>p.prio&&PRIO[p.prio]?`<span class="prio prio-${p.prio}">${PRIO[p.prio]}</span>`:"";
 function filterBar(){
   const opts=[["all","Todos"],["todo","Por iniciar"],["doing","En curso"],["review","En revisión"],["blocked","Bloqueado"]];
-  return `<div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>`;
+  return `<div class="fbars"><div class="filters">${opts.map(([k,l])=>`<button data-act="filter" data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("")}</div>
+  <div class="filters prio-f"><span class="hint">Prioridad</span>${[["all","Todas"],["alta","Alta"],["media","Media"],["baja","Baja"]].map(([k,l])=>`<button data-act="pfilter" data-f="${k}" class="${prioF===k?"on":""}">${k!=="all"?`<i class="dot prio-${k}"></i>`:""}${l}</button>`).join("")}</div></div>`;
 }
 function viewArea(k){
   const A=AREAS[k],ps=S.projects.filter(p=>p.area===k&&!isDone(p)),nDone=S.projects.filter(p=>p.area===k&&isDone(p)).length;
   const ids=[...new Set(S.users.filter(u=>u.area===k).map(u=>u.id).concat(ps.map(p=>p.owner)))].filter(Boolean);
   const loose=ps.filter(p=>!p.owner);
-  const vis=p=>filter==="all"||p.status===filter;
+  const vis=visP;
   return `
   <div class="area-hero">
     <div><span class="n">${A.n}</span><h1>${esc(A.name)}</h1><p>${A.desc}</p>
@@ -1109,11 +1122,11 @@ function viewArea(k){
     <div class="ring" style="--p:${areaPct(k)};--size:120px"><div><div><b class="num">${areaPct(k)}%</b><br><span>AVANCE</span></div></div></div>
   </div>
   <div class="page-head">${filterBar()}<div style="display:flex;gap:8px;align-items:center">${nDone?`<a class="btn ghost sm" href="#completados" style="text-decoration:none">✓ ${nDone} completado${nDone===1?"":"s"}</a>`:""}${canProj()?`<a class="btn sm" href="#p/nuevo/${k}" style="text-decoration:none">+ Nuevo proyecto</a>`:""}</div></div>
-  <div class="members">${ids.length?ids.map(id=>{const u=user(id);const mine=ps.filter(p=>p.owner===id);const shown=mine.filter(vis);
+  <div class="members">${ids.length?ids.map(id=>{const u=user(id);const mine=ps.filter(p=>p.owner===id);const shown=mine.filter(vis).sort(byPrio);
     const avg=mine.length?Math.round(mine.reduce((s,p)=>s+pct(p),0)/mine.length):0;
     return `<section class="member"><div class="member-head">${av(u)}<div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)}</div></div>
       <span class="sum num">${mine.length} proyecto${mine.length===1?"":"s"} · ${avg}%</span></div>
-      ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,false)).join("")}</div>`:`<div class="empty">${mine.length?"Ningún proyecto con este estado.":"Todavía no tiene proyectos en esta área."}</div>`}</section>`}).join(""):'<div class="empty">Nadie registrado en esta área todavía.</div>'}</div>${loose.length?`<section class="member" style="margin-top:20px"><div class="member-head"><div><div class="nm">Sin responsable</div><div class="rl">Proyectos del área sin persona asignada</div></div></div><div class="proj-grid">${loose.filter(vis).map(p=>projCard(p,false)).join("")}</div></section>`:""}`;
+      ${shown.length?`<div class="proj-grid">${shown.map(p=>projCard(p,false)).join("")}</div>`:`<div class="empty">${mine.length?"Ningún proyecto con este estado.":"Todavía no tiene proyectos en esta área."}</div>`}</section>`}).join(""):'<div class="empty">Nadie registrado en esta área todavía.</div>'}</div>${loose.length?`<section class="member" style="margin-top:20px"><div class="member-head"><div><div class="nm">Sin responsable</div><div class="rl">Proyectos del área sin persona asignada</div></div></div><div class="proj-grid">${loose.filter(vis).sort(byPrio).map(p=>projCard(p,false)).join("")}</div></section>`:""}`;
 }
 const LAUNCH=new Date("2026-12-21T00:00:00-06:00");
 const isDone=p=>p.status==="done";
@@ -1286,7 +1299,7 @@ function viewGenProject(id){
   return `
   <div class="area-hero">
     <div><span class="n">${AREAS[p.area]?`<a href="#${p.area}" style="color:inherit;text-decoration:none">${AREAS[p.area].n} · ${esc(AREAS[p.area].name)}</a>`:"Proyecto general · toda la empresa"}${p.owner?" · Responsable: "+esc(user(p.owner).name):""}</span><h1>${esc(p.title)}</h1><p>${esc(p.desc||"")}</p>${p.goal?`<div class="goal-hero"><span>Objetivo</span>${esc(p.goal)}</div>`:""}
-      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${chip(p.status)}
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">${prioChip(p)}${chip(p.status)}
         <span style="color:var(--olive-ink-2);font-size:13.5px">${p.due?`Fecha: ${esc(fmtDate(p.due))}${dl!==null&&dl>=0&&p.status!=="done"?` · faltan ${dl} día${dl===1?"":"s"}`:""}`:"Sin fecha"} · ${p.ms.filter(m=>m[1]).length}/${p.ms.length} hitos</span>
         <span class="stack">${people.map(id=>av(user(id),"sm")).join("")}</span></div></div>
     <div class="ring" style="--p:${v};--size:120px"><div><div><b class="num">${v}%</b><br><span>AVANCE</span></div></div></div>
@@ -1299,6 +1312,7 @@ function viewGenProject(id){
     <label class="field">Objetivo<textarea id="gpG" maxlength="300" placeholder="¿Qué se logra cuando esté listo?">${esc(p.goal||"")}</textarea></label>
     <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
     <label class="field">Responsable del proyecto<select id="gpO"><option value="">Sin responsable</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+    <label class="field">Prioridad<select id="gpP"><option value="">Sin prioridad</option>${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${p.prio===k?"selected":""}>${l}</option>`).join("")}</select></label>
     <label class="field">Estado<select id="gpS">${Object.entries(STATUS).map(([k,l])=>`<option value="${k}" ${p.status===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
     <div class="gp-row" style="justify-content:space-between"><button type="button" class="btn ghost sm danger" id="gpDel">Borrar proyecto</button>
     <div style="display:flex;gap:8px"><button type="button" class="btn ghost sm" id="gpX">Cancelar</button><button class="btn sm" type="submit">Guardar</button></div></div>
@@ -1349,7 +1363,7 @@ function bindGenProject(id){if(!canProj())return;
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
-  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;const prevO=p.owner;p.owner=$("#gpO").value;pEditing=false;route();saveGen(p,p.owner&&p.owner!==prevO?`pasó a ${user(p.owner).name} el proyecto`:"editó")};
+  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;p.prio=$("#gpP").value;const prevO=p.owner;p.owner=$("#gpO").value;pEditing=false;route();saveGen(p,p.owner&&p.owner!==prevO?`pasó a ${user(p.owner).name} el proyecto`:"editó")};
   $("#gpDel").onclick=async()=>{const b=$("#gpDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
     const r=await AUTH.from("gen_projects").delete().eq("id",id);if(r.error){toast("No se pudo borrar");return}
     const ar=(dbProj(id)||{}).area;GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash=AREAS[ar]?ar:"proyectos"};
@@ -1362,17 +1376,18 @@ function viewNewProject(ar){const opts=[["general","General · toda la empresa"]
     <label class="field">Objetivo<textarea id="npG" maxlength="300" placeholder="¿Qué se logra cuando esté listo? Ej. Tener 50 clientes pagando en Costa Rica"></textarea></label>
     <div class="gp-row"><label class="field">Dónde va<select id="npA">${opts.map(([k,l])=>`<option value="${k}" ${ar===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label>
       <label class="field" id="npOw" ${ar==="general"?"":"hidden"}>Responsable<select id="npO"><option value="">Sin responsable</option>${teamUsers().map(u=>`<option value="${esc(u.id)}" ${mine===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
+      <label class="field">Prioridad<select id="npP">${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${k==="media"?"selected":""}>${l}</option>`).join("")}</select></label>
       <label class="field">Fecha<input id="npDue" type="date"></label></div>
     <div class="gp-row" style="justify-content:flex-end"><a class="btn ghost sm" href="#${AREAS[ar]?ar:"proyectos"}" style="text-decoration:none">Cancelar</a><button class="btn sm" type="submit">Crear proyecto</button></div>
   </form>`}
 function bindNewProject(){$("#npT").focus();$("#npA").onchange=()=>{$("#npOw").hidden=$("#npA").value!=="general"};$("#npF").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button[type=submit]");b.disabled=true;
-  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npA").value==="general"?$("#npO").value:((acct&&acct.member)||$("#npO").value),title:$("#npT").value.trim(),desc:$("#npD").value.trim(),goal:$("#npG").value.trim(),due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
+  const p={id:"g"+Date.now().toString(36),area:$("#npA").value,owner:$("#npA").value==="general"?$("#npO").value:((acct&&acct.member)||$("#npO").value),title:$("#npT").value.trim(),desc:$("#npD").value.trim(),goal:$("#npG").value.trim(),prio:$("#npP").value,due:$("#npDue").value,status:"todo",example:false,ms:[],links:[],log:[],_db:1};
   GEN=(GEN||[]).concat([p]);setProjects(STATIC.projects);
   if(await saveGen(p,"creó el proyecto"))location.hash="p/"+p.id;else b.disabled=false}}
 function viewDone(){const ps=doneProjects();const groups=[["general","Proyectos generales"],...AREA_KEYS.map(k=>[k,AREAS[k].name])];
   return `<div class="page-head"><div><div class="eyebrow">Archivo</div><h1>Completados</h1><p>Los proyectos terminados salen de la vista principal y quedan aquí. Para reabrir uno, entra y cambia su estado.</p></div></div>
   ${ps.length?groups.map(([k,l])=>{const g=ps.filter(p=>p.area===k);return g.length?`<section class="member" style="margin-bottom:22px"><div class="member-head"><div><div class="nm">${esc(l)}</div><div class="rl">${g.length} completado${g.length===1?"":"s"}</div></div></div><div class="proj-grid">${g.map(p=>projCard(p,true)).join("")}</div></section>`:""}).join(""):'<div class="empty">Todavía no hay proyectos completados.</div>'}`}
-function viewProjects(){const ps=genProjects();const vis=p=>filter==="all"||p.status===filter;const shown=ps.filter(vis);
+function viewProjects(){const ps=genProjects();const vis=visP;const shown=ps.filter(vis).sort(byPrio);
   return `<div class="page-head"><div><div class="eyebrow">Toda la empresa</div><h1>Proyectos</h1>
     <p>Los proyectos grandes de KORA, en los que trabajan todas las áreas.</p></div>
     ${canProj()?'<a class="btn" href="#p/nuevo" style="text-decoration:none">+ Nuevo proyecto</a>':""}</div>

@@ -1342,6 +1342,7 @@ function viewGenProject(id){
     <label class="field">Nombre<input id="gpT" maxlength="80" required value="${esc(p.title)}"></label>
     <label class="field">Descripción<textarea id="gpD" maxlength="400">${esc(p.desc||"")}</textarea></label>
     <label class="field">Objetivo<textarea id="gpG" maxlength="300" placeholder="¿Qué se logra cuando esté listo?">${esc(p.goal||"")}</textarea></label>
+    <label class="field">Área<select id="gpA"><option value="general" ${p.area==="general"?"selected":""}>General · toda la empresa</option>${AREA_KEYS.map(k=>`<option value="${k}" ${p.area===k?"selected":""}>${esc(AREAS[k].name)}</option>`).join("")}</select></label>
     <div class="gp-row"><label class="field">Fecha<input id="gpDue" type="date" value="${esc(p.due||"")}"></label>
     <label class="field">${p.area==="general"?"Creado por":"Responsable del proyecto"}<select id="gpO"><option value="">${p.area==="general"?"Nadie":"Sin responsable"}</option>${teamUsers().concat(p.owner&&!teamUsers().some(u=>u.id===p.owner)?[user(p.owner)]:[]).map(u=>`<option value="${esc(u.id)}" ${p.owner===u.id?"selected":""}>${esc(u.name)}</option>`).join("")}</select></label>
     <label class="field">Prioridad<select id="gpP"><option value="">Sin prioridad</option>${Object.entries(PRIO).map(([k,l])=>`<option value="${k}" ${p.prio===k?"selected":""}>${l}</option>`).join("")}</select></label>
@@ -1395,7 +1396,7 @@ function bindGenProject(id){if(!canProj())return;bindPrio();
   const f=$("#gpForm");
   $("#gpEdit").onclick=()=>{f.hidden=!f.hidden;pEditing=!f.hidden;if(!f.hidden)$("#gpT").focus()};
   $("#gpX").onclick=()=>{f.hidden=true;pEditing=false};
-  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;p.prio=$("#gpP").value;const prevO=p.owner;p.owner=$("#gpO").value;pEditing=false;route();saveGen(p,p.owner&&p.owner!==prevO?`pasó a ${user(p.owner).name} el proyecto`:"editó")};
+  f.onsubmit=e=>{e.preventDefault();const p=get();p.title=$("#gpT").value.trim()||p.title;p.desc=$("#gpD").value.trim();p.goal=$("#gpG").value.trim();p.due=$("#gpDue").value;p.status=$("#gpS").value;p.prio=$("#gpP").value;const prevO=p.owner,prevA=p.area;p.owner=$("#gpO").value;const na=$("#gpA").value;if(na==="general"||AREAS[na])p.area=na;pEditing=false;route();renderShell();saveGen(p,p.area!==prevA?`movió a ${p.area==="general"?"Proyectos generales":AREAS[p.area].short} el proyecto`:p.owner&&p.owner!==prevO?`pasó a ${user(p.owner).name} el proyecto`:"editó")};
   $("#gpDel").onclick=async()=>{const b=$("#gpDel");if(!b.dataset.sure){b.dataset.sure=1;b.textContent="¿Seguro? Toca otra vez";return}
     const r=await AUTH.from("gen_projects").delete().eq("id",id);if(r.error){toast("No se pudo borrar");return}
     const ar=(dbProj(id)||{}).area;GEN=GEN.filter(x=>x.id!==id);setProjects(STATIC.projects);pEditing=false;toast("Proyecto borrado");location.hash=AREAS[ar]?ar:"proyectos"};
